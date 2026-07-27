@@ -63,7 +63,10 @@ function codereview_add_instance(stdClass $data, ?mod_codereview_mod_form $mform
     $data->timemodified = $data->timecreated;
     codereview_prepare_instance_data($data);
 
-    return $DB->insert_record('codereview', $data);
+    $data->id = $DB->insert_record('codereview', $data);
+    codereview_grade_item_update($data);
+
+    return $data->id;
 }
 
 /**
@@ -80,7 +83,10 @@ function codereview_update_instance(stdClass $data, ?mod_codereview_mod_form $mf
     $data->timemodified = time();
     codereview_prepare_instance_data($data);
 
-    return $DB->update_record('codereview', $data);
+    $updated = $DB->update_record('codereview', $data);
+    codereview_grade_item_update($data);
+
+    return $updated;
 }
 
 /**
@@ -119,9 +125,13 @@ function codereview_prepare_instance_data(stdClass $data): void {
 function codereview_delete_instance(int $id): bool {
     global $DB;
 
-    if (!$DB->record_exists('codereview', ['id' => $id])) {
+    $instance = $DB->get_record('codereview', ['id' => $id]);
+    if (!$instance) {
         return false;
     }
+
+    codereview_grade_item_update($instance, 'reset');
+    grade_update('mod/codereview', $instance->course, 'mod', 'codereview', $id, 0, null, ['deleted' => 1]);
 
     $submissionids = $DB->get_fieldset_select('codereview_submissions', 'id', 'codereview = ?', [$id]);
 
@@ -139,6 +149,116 @@ function codereview_delete_instance(int $id): bool {
     $DB->delete_records('codereview', ['id' => $id]);
 
     return true;
+}
+
+/**
+ * Creates or updates the grade item for an instance.
+ *
+ * @param stdClass $codereview The instance record.
+ * @param mixed $grades Grades to push, 'reset' to clear, or null for none.
+ * @return int A GRADE_UPDATE_* status.
+ */
+function codereview_grade_item_update(stdClass $codereview, $grades = null): int {
+    global $CFG;
+
+    require_once($CFG->libdir . '/gradelib.php');
+
+    $item = [
+        'itemname' => clean_param($codereview->name, PARAM_NOTAGS),
+        'gradetype' => GRADE_TYPE_VALUE,
+    ];
+
+    if ($codereview->grade > 0) {
+        $item['gradetype'] = GRADE_TYPE_VALUE;
+        $item['grademax'] = $codereview->grade;
+        $item['grademin'] = 0;
+    } else if ($codereview->grade < 0) {
+        $item['gradetype'] = GRADE_TYPE_SCALE;
+        $item['scaleid'] = -$codereview->grade;
+    } else {
+        $item['gradetype'] = GRADE_TYPE_NONE;
+    }
+
+    if ($grades === 'reset') {
+        $item['reset'] = true;
+        $grades = null;
+    }
+
+    return grade_update('mod/codereview', $codereview->course, 'mod', 'codereview', $codereview->id, 0, $grades, $item);
+}
+
+/**
+ * Returns the approved grades of an instance in gradebook format.
+ *
+ * Only approved decisions are returned. The raw suggestion never reaches the
+ * gradebook: a grade exists once a teacher has said so, and not before.
+ *
+ * @param stdClass $codereview The instance record.
+ * @param int $userid A single user to fetch, or 0 for everyone.
+ * @return array Grades keyed by user id.
+ */
+function codereview_get_user_grades(stdClass $codereview, int $userid = 0): array {
+    global $DB;
+
+    $params = ['codereview' => $codereview->id];
+    $where = '';
+
+    if ($userid) {
+        $where = ' AND s.userid = :userid';
+        $params['userid'] = $userid;
+    }
+
+    $sql = "SELECT s.userid AS userid, g.finalgrade AS rawgrade, g.timemodified AS dategraded,
+                   g.graderid AS usermodified, g.timecreated AS datesubmitted
+              FROM {codereview_submissions} s
+              JOIN {codereview_grades} g ON g.submission = s.id
+             WHERE s.codereview = :codereview AND g.finalgrade IS NOT NULL" . $where;
+
+    $grades = [];
+    foreach ($DB->get_records_sql($sql, $params) as $record) {
+        $record->id = $record->userid;
+        $grades[$record->userid] = $record;
+    }
+
+    return $grades;
+}
+
+/**
+ * Pushes approved grades into the gradebook.
+ *
+ * @param stdClass $codereview The instance record.
+ * @param int $userid A single user to update, or 0 for everyone.
+ * @param bool $nullifnone Whether to write a null grade when none exists.
+ * @return void
+ */
+function codereview_update_grades(stdClass $codereview, int $userid = 0, bool $nullifnone = true): void {
+    $grades = codereview_get_user_grades($codereview, $userid);
+
+    if ($grades) {
+        codereview_grade_item_update($codereview, $grades);
+
+        return;
+    }
+
+    if ($userid && $nullifnone) {
+        codereview_grade_item_update($codereview, (object) ['userid' => $userid, 'rawgrade' => null]);
+
+        return;
+    }
+
+    codereview_grade_item_update($codereview);
+}
+
+/**
+ * Reports whether a scale is in use by any instance.
+ *
+ * @param int $scaleid The scale to look for.
+ * @return bool
+ */
+function codereview_scale_used_anywhere(int $scaleid): bool {
+    global $DB;
+
+    return $scaleid && $DB->record_exists('codereview', ['grade' => -$scaleid]);
 }
 
 /**

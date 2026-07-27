@@ -1,0 +1,218 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_codereview/review_page
+
+    Teacher review screen for a single submission.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-region="codereview-review"
+    * data-action="rerun-ai"
+
+    Context variables required for this template:
+    * submissionid int The submission being reviewed
+    * repourl string Link to the repository on GitHub
+    * commitsha string The submitted commit
+    * checkruns array The automated check results
+    * airesult object The most recent AI review, when there is one
+    * flags array The authorship signals, each with its evidence
+
+    Example context (json):
+    {
+        "submissionid": 12,
+        "repourl": "https://github.com/octocat/hello-world",
+        "repoowner": "octocat",
+        "commitsha": "1234567890abcdef1234567890abcdef12345678",
+        "authorlogin": "octocat",
+        "commitdateformatted": "20 July 2026, 9:00 AM",
+        "submitteddateformatted": "20 July 2026, 10:15 AM",
+        "islate": false,
+        "truncated": false,
+        "cistatuslabel": "Automated checks finished",
+        "aistatuslabel": "AI review finished",
+        "grademax": 100,
+        "hassuggestion": true,
+        "suggestedgradeformatted": "82.50",
+        "hascheckruns": true,
+        "checkruns": [
+            {"name": "pytest", "conclusion": "success", "passed": true, "counted": true,
+             "detailsurl": "https://github.com/octocat/hello-world/runs/1", "appslug": "github-actions"}
+        ],
+        "hasairesult": true,
+        "aisucceeded": true,
+        "aigradeformatted": "85.00",
+        "airesult": {"status": "completed", "provider": "local_aihub", "model": "gemini",
+                     "feedback": "Clear structure.", "errormessage": ""},
+        "hasflags": false,
+        "flags": [],
+        "sesskey": "abc123",
+        "cmid": 7
+    }
+}}
+<div class="cr-review" data-region="codereview-review" data-submissionid="{{submissionid}}">
+
+    <div class="cr-panel">
+        <h3>{{#str}} submissiondetails, mod_codereview {{/str}}</h3>
+        <dl class="cr-details">
+            <dt>{{#str}} repourl, mod_codereview {{/str}}</dt>
+            <dd>
+                <a href="{{repourl}}" rel="noopener" target="_blank"
+                   aria-label="{{#str}} opensinnewtab, mod_codereview {{/str}}">{{repourl}}</a>
+            </dd>
+            <dt>{{#str}} commitsha, mod_codereview {{/str}}</dt>
+            <dd><code>{{commitsha}}</code></dd>
+            <dt>{{#str}} submittedon, mod_codereview {{/str}}</dt>
+            <dd>{{submitteddateformatted}}</dd>
+            {{#commitdateformatted}}
+                <dt>{{#str}} commitdatedeclared, mod_codereview {{/str}}</dt>
+                <dd>{{commitdateformatted}}</dd>
+            {{/commitdateformatted}}
+            {{#authorlogin}}
+                <dt>{{#str}} commitauthor, mod_codereview {{/str}}</dt>
+                <dd>{{authorlogin}}</dd>
+            {{/authorlogin}}
+        </dl>
+        {{#islate}}
+            <p class="cr-alert cr-alert-warning">
+                <i class="fa fa-clock-o" aria-hidden="true"></i>
+                {{#str}} islate, mod_codereview {{/str}}
+            </p>
+        {{/islate}}
+    </div>
+
+    <div class="cr-panel">
+        <h3>{{#str}} checkruns, mod_codereview {{/str}}</h3>
+        <p>{{cistatuslabel}}</p>
+        {{#hascheckruns}}
+            <table class="table table-sm cr-checkruns">
+                <thead>
+                    <tr>
+                        <th scope="col">{{#str}} checkname, mod_codereview {{/str}}</th>
+                        <th scope="col">{{#str}} checkresult, mod_codereview {{/str}}</th>
+                        <th scope="col">{{#str}} checkcounted, mod_codereview {{/str}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#checkruns}}
+                        <tr>
+                            <td>
+                                {{#detailsurl}}
+                                    <a href="{{detailsurl}}" rel="noopener" target="_blank"
+                                       aria-label="{{#str}} opensinnewtab, mod_codereview {{/str}}">{{name}}</a>
+                                {{/detailsurl}}
+                                {{^detailsurl}}{{name}}{{/detailsurl}}
+                            </td>
+                            <td>
+                                {{#passed}}
+                                    <i class="fa fa-check" aria-hidden="true"></i>
+                                {{/passed}}
+                                {{^passed}}
+                                    <i class="fa fa-times" aria-hidden="true"></i>
+                                {{/passed}}
+                                {{conclusion}}
+                            </td>
+                            <td>
+                                {{#counted}}{{#str}} yes {{/str}}{{/counted}}
+                                {{^counted}}{{#str}} checkrunnotcounted, mod_codereview {{/str}}{{/counted}}
+                            </td>
+                        </tr>
+                    {{/checkruns}}
+                </tbody>
+            </table>
+        {{/hascheckruns}}
+        {{^hascheckruns}}
+            <p>{{#str}} nocheckruns, mod_codereview {{/str}}</p>
+        {{/hascheckruns}}
+    </div>
+
+    <div class="cr-panel">
+        <h3>{{#str}} aireview, mod_codereview {{/str}}</h3>
+        <p>{{aistatuslabel}}</p>
+        {{#hasairesult}}
+            {{#aisucceeded}}
+                {{#aigradeformatted}}
+                    <p class="cr-aigrade">
+                        {{#str}} suggestedgrade, mod_codereview {{/str}}: <strong>{{aigradeformatted}}</strong>
+                    </p>
+                {{/aigradeformatted}}
+                <div class="cr-aifeedback">{{airesult.feedback}}</div>
+                <p class="cr-provenance">
+                    {{#str}} aigeneratedby, mod_codereview {{/str}} {{airesult.provider}} {{airesult.model}}
+                </p>
+            {{/aisucceeded}}
+            {{^aisucceeded}}
+                <p class="cr-alert cr-alert-warning">
+                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                    {{airesult.errormessage}}
+                </p>
+            {{/aisucceeded}}
+        {{/hasairesult}}
+        {{#truncated}}
+            <p class="cr-alert cr-alert-warning">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                {{#str}} truncatedcode, mod_codereview {{/str}}
+            </p>
+        {{/truncated}}
+        <button type="button" class="btn btn-secondary btn-sm" data-action="rerun-ai"
+                data-submissionid="{{submissionid}}">
+            {{#str}} rerunaireview, mod_codereview {{/str}}
+        </button>
+    </div>
+
+    <div class="cr-panel cr-integrity">
+        <h3>{{#str}} integritypanel, mod_codereview {{/str}}</h3>
+        {{#hasflags}}
+            <ul class="cr-flags">
+                {{#flags}}
+                    <li class="cr-flag cr-flag-{{severity}}">
+                        <span class="badge cr-severity-{{severity}}">{{severitylabel}}</span>
+                        <span class="cr-flag-text">{{description}}</span>
+                        {{#haspeer}}
+                            <div class="cr-flag-peer">
+                                <a href="{{peerreviewurl}}">{{peername}}</a>
+                                &middot;
+                                <a href="{{peerrepourl}}" rel="noopener" target="_blank"
+                                   aria-label="{{#str}} opensinnewtab, mod_codereview {{/str}}">{{peerrepourl}}</a>
+                                {{#publishedfirst}}<div class="cr-flag-order">{{publishedfirst}}</div>{{/publishedfirst}}
+                            </div>
+                        {{/haspeer}}
+                    </li>
+                {{/flags}}
+            </ul>
+        {{/hasflags}}
+        {{^hasflags}}
+            <p>{{#str}} integritynoflags, mod_codereview {{/str}}</p>
+        {{/hasflags}}
+        <p class="cr-disclaimer">{{#str}} integritydisclaimer, mod_codereview {{/str}}</p>
+    </div>
+
+    {{#hassuggestion}}
+        <div class="cr-panel cr-suggestion">
+            <h3>{{#str}} suggestedgrade, mod_codereview {{/str}}</h3>
+            <p class="cr-suggested-value">{{suggestedgradeformatted}} / {{grademax}}</p>
+            <p>{{#str}} suggestionisadvisory, mod_codereview {{/str}}</p>
+        </div>
+    {{/hassuggestion}}
+</div>
+{{#js}}
+require(['mod_codereview/review_page'], function(ReviewPage) {
+    ReviewPage.init();
+});
+{{/js}}

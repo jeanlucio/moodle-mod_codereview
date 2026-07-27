@@ -43,7 +43,25 @@ $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
 
+$PAGE->add_body_class('path-mod-codereview');
+
+$cangrade = has_capability('mod/codereview:grade', $context);
 $cansubmit = has_capability('mod/codereview:submit', $context);
+
+if ($cangrade) {
+    $groupid = groups_get_activity_group($cm, true);
+
+    echo $OUTPUT->header();
+    groups_print_activity_menu($cm, $PAGE->url);
+
+    $table = new \mod_codereview\table\grading_overview_table($instance, $context, (int) $cm->id, (int) $groupid);
+    $table->define_baseurl($PAGE->url);
+    $table->out(30, true);
+
+    echo $OUTPUT->footer();
+    exit;
+}
+
 $submission = $DB->get_record('codereview_submissions', [
     'codereview' => $instance->id,
     'userid' => $USER->id,
