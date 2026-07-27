@@ -1,0 +1,97 @@
+<?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
+/**
+ * Brazilian Portuguese strings for mod_codereview.
+ *
+ * @package    mod_codereview
+ * @copyright  2026 Jean Lúcio
+ * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
+defined('MOODLE_INTERNAL') || die();
+// phpcs:disable moodle.Files.LineLength
+
+$string['authorshipnotice'] = 'Os metadados do repositório são analisados para verificar a autoria desta entrega.';
+$string['citimeout'] = 'Tempo limite da checagem automática (minutos)';
+$string['citimeout_help'] = 'Por quanto tempo consultar o GitHub em busca do resultado das checagens automáticas antes de desistir e informar que nenhum CI foi detectado.';
+$string['codereview:addinstance'] = 'Adicionar uma nova atividade CodeReview';
+$string['codereview:grade'] = 'Revisar entregas e aprovar notas';
+$string['codereview:submit'] = 'Enviar um repositório para revisão';
+$string['codereview:usepersonaltoken'] = 'Usar um token pessoal do GitHub';
+$string['codereview:view'] = 'Ver a atividade CodeReview';
+$string['codereview:viewreports'] = 'Ver relatórios de entrega';
+$string['commitsha'] = 'SHA do commit';
+$string['commitsha_help'] = 'O SHA completo, de 40 caracteres, do commit a ser avaliado. Nomes de branch e tags não são aceitos, porque podem mudar depois do envio.';
+$string['cutoffdate'] = 'Data de corte';
+$string['cutoffdate_help'] = 'Depois desta data nenhuma entrega ou reenvio é aceito. Deixe desabilitado para permitir entregas por tempo indeterminado.';
+$string['duedate'] = 'Prazo de entrega';
+$string['duedate_help'] = 'Entregas enviadas depois desta data são sinalizadas como atrasadas para o professor, mas não são bloqueadas.';
+$string['enablepersonaltokens'] = 'Permitir tokens pessoais do GitHub';
+$string['enablepersonaltokens_desc'] = 'Quando habilitado, professores com a capacidade correspondente podem guardar o próprio token do GitHub e usá-lo nas atividades deles, em vez de depender do token do site.';
+$string['erroralreadygraded'] = 'Esta entrega já foi avaliada. Peça ao professor para reabri-la antes de enviar novamente.';
+$string['errorcommitnotfound'] = 'Este commit não foi encontrado no repositório informado. Confira o SHA e tente de novo.';
+$string['errorcutoffpassed'] = 'A data de corte desta atividade já passou.';
+$string['errorgithubapi'] = 'Não foi possível acessar a API do GitHub. Tente novamente em alguns minutos.';
+$string['errorgithubratelimit'] = 'O limite de requisições da API do GitHub foi atingido. Tente novamente mais tarde.';
+$string['errorinvalidcommitsha'] = 'Informe o SHA completo do commit, com 40 caracteres hexadecimais.';
+$string['errorinvalidrepourl'] = 'Informe uma URL válida de repositório público do GitHub, por exemplo https://github.com/dono/repositorio.';
+$string['errornotpublic'] = 'Este repositório não é público. Esta atividade só avalia repositórios públicos.';
+$string['errorrepositorynotfound'] = 'Este repositório não foi encontrado no GitHub. Confira a URL e tente de novo.';
+$string['errortokeninvalid'] = 'O token do GitHub em uso não é mais válido. Peça ao professor ou ao administrador para atualizá-lo.';
+$string['eventrepo_submitted'] = 'Repositório enviado';
+$string['integritychecks'] = 'Verificar autoria';
+$string['integritychecks_help'] = 'Compara metadados do repositório e hashes de conteúdo dos arquivos entre as entregas para detectar duplicatas exatas. O resultado é apresentado ao professor apenas como evidência e nunca altera uma nota automaticamente.';
+$string['modulename'] = 'CodeReview';
+$string['modulename_help'] = 'O CodeReview avalia trabalhos de programação hospedados no GitHub. O estudante envia a URL de um repositório e o SHA de um commit; a atividade lê o resultado das checagens automáticas que o GitHub Actions já produziu para aquele commit, opcionalmente acrescenta uma revisão por IA, e apresenta tudo numa tela dedicada onde o professor aprova a nota final.';
+$string['modulenameplural'] = 'CodeReviews';
+$string['mytoken'] = 'Meu token do GitHub';
+$string['personaltoken'] = 'Token pessoal do GitHub';
+$string['personaltoken_help'] = 'Um token de acesso pessoal fine-grained, somente leitura. Ele é armazenado cifrado, nunca é exibido novamente depois de salvo, e serve apenas para ler os repositórios enviados às suas atividades.';
+$string['personaltokennotset'] = 'Nenhum token pessoal armazenado.';
+$string['personaltokenremove'] = 'Remover meu token';
+$string['personaltokenremoved'] = 'Seu token do GitHub foi removido.';
+$string['personaltokensaved'] = 'Seu token do GitHub foi salvo.';
+$string['personaltokenstored'] = 'Há um token pessoal armazenado. Salvar um novo substitui o anterior.';
+$string['pluginadministration'] = 'Administração do CodeReview';
+$string['pluginname'] = 'CodeReview';
+$string['privacy:metadata:codereview_submissions'] = 'Entregas de repositório feitas pelo estudante.';
+$string['privacy:metadata:codereview_submissions:commitsha'] = 'O SHA do commit enviado.';
+$string['privacy:metadata:codereview_submissions:repourl'] = 'A URL do repositório enviado.';
+$string['privacy:metadata:codereview_submissions:timecreated'] = 'Quando a entrega foi feita.';
+$string['privacy:metadata:codereview_submissions:userid'] = 'O estudante que fez a entrega.';
+$string['privacy:metadata:github'] = 'Identificadores de repositório e de commit são enviados à API do GitHub para ler o repositório e o resultado das checagens automáticas.';
+$string['privacy:metadata:github:commitsha'] = 'O SHA do commit sendo avaliado.';
+$string['privacy:metadata:github:repourl'] = 'O repositório sendo avaliado.';
+$string['privacy:metadata:preference:githubtoken'] = 'Seu token pessoal de acesso ao GitHub, armazenado cifrado e usado para autenticar as requisições das suas atividades.';
+$string['privacy:redacted'] = 'O valor armazenado não é exportado por motivo de segurança.';
+$string['publicrepowarning'] = 'O repositório precisa ser público, portanto seu trabalho ficará visível para qualquer pessoa na internet.';
+$string['repourl'] = 'URL do repositório';
+$string['repourl_help'] = 'A URL completa do seu repositório público no GitHub, por exemplo https://github.com/dono/repositorio.';
+$string['rubric'] = 'Rubrica de avaliação';
+$string['rubric_help'] = 'Critérios usados pela revisão por IA ao sugerir uma nota. Não é exibida aos estudantes.';
+$string['sitetoken'] = 'Token do GitHub do site';
+$string['sitetoken_desc'] = 'Um token de acesso pessoal fine-grained, somente leitura de repositórios públicos. Sem ele, a API do GitHub permite apenas 60 requisições por hora para o site inteiro, o que serve para demonstração mas não para uso real.';
+$string['submitrepo'] = 'Enviar repositório';
+$string['templaterepourl'] = 'URL do repositório-molde';
+$string['templaterepourl_help'] = 'O repositório que você distribuiu aos estudantes. Os arquivos dele servem de linha de base para que o código comum do molde não seja apontado como trabalho duplicado.';
+$string['tokeninuse'] = 'Usando o token do GitHub de {$a}.';
+$string['tokenusemine'] = 'Usar meu token pessoal nesta atividade';
+$string['weightai'] = 'Peso da revisão por IA (%)';
+$string['weightai_help'] = 'O quanto a revisão por IA contribui para a nota sugerida. Defina como zero para desabilitar a revisão por IA por completo, caso em que nenhum código é enviado a provedor externo de IA.';
+$string['weightsmustsum'] = 'O peso das checagens automáticas e o peso da revisão por IA precisam somar 100.';
+$string['weighttests'] = 'Peso das checagens automáticas (%)';
+$string['weighttests_help'] = 'O quanto o resultado do GitHub Actions contribui para a nota sugerida. Este peso e o peso da revisão por IA precisam somar 100.';
