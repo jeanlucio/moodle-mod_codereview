@@ -19,6 +19,7 @@ namespace mod_codereview\local;
 use context_module;
 use mod_codereview\event\repo_submitted;
 use mod_codereview\exception\github_exception;
+use mod_codereview\task\poll_check_runs;
 use moodle_exception;
 use stdClass;
 
@@ -35,6 +36,18 @@ use stdClass;
 class submission_service {
     /** @var string No automated check result has been requested yet. */
     public const CI_PENDING = 'pending';
+
+    /** @var string The API has been queried and at least one check is still running. */
+    public const CI_CHECKING = 'checking';
+
+    /** @var string Every check-run reached a conclusion. */
+    public const CI_COMPLETED = 'completed';
+
+    /** @var string The timeout elapsed without a single check-run appearing. */
+    public const CI_NOCIDETECTED = 'nocidetected';
+
+    /** @var string Polling stopped because of an error that retrying will not fix. */
+    public const CI_ERROR = 'error';
 
     /** @var string The AI review has not been requested for this submission. */
     public const AI_SKIPPED = 'skipped';
@@ -120,6 +133,10 @@ class submission_service {
         }
 
         repo_submitted::create_from_submission($context, $record)->trigger();
+
+        // A short initial delay gives GitHub Actions time to register the run: polling
+        // the instant the student clicks submit would almost always see nothing yet.
+        poll_check_runs::queue((int) $record->id, 30);
 
         return $record;
     }

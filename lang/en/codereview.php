@@ -26,6 +26,11 @@ defined('MOODLE_INTERNAL') || die();
 // phpcs:disable moodle.Files.LineLength
 
 $string['authorshipnotice'] = 'Repository metadata is analysed to verify the authorship of this submission.';
+$string['checkrunnotcounted'] = 'Not counted towards the grade (not a GitHub Actions check)';
+$string['checkruns'] = 'Automated checks';
+$string['cichecking'] = 'Automated checks are running...';
+$string['cicompleted'] = 'Automated checks finished';
+$string['cierror'] = 'The automated checks could not be read';
 $string['citimeout'] = 'Automated check timeout (minutes)';
 $string['citimeout_help'] = 'How long to keep polling GitHub for automated check results before giving up and reporting that no CI was detected.';
 $string['codereview:addinstance'] = 'Add a new CodeReview activity';
@@ -50,11 +55,15 @@ $string['errorgithubratelimit'] = 'The GitHub API rate limit was reached. Please
 $string['errorinvalidcommitsha'] = 'Enter the full 40-character commit SHA, using hexadecimal characters only.';
 $string['errorinvalidrepourl'] = 'Enter a valid public GitHub repository URL, for example https://github.com/owner/repository.';
 $string['errornotpublic'] = 'That repository is not public. This activity can only assess public repositories.';
+$string['errorrecheckpending'] = 'This submission has not been checked yet. Wait for the first automated check before requesting another.';
 $string['errorrepositorynotfound'] = 'That repository was not found on GitHub. Check the URL and try again.';
 $string['errortokeninvalid'] = 'The GitHub token in use is no longer valid. Ask your teacher or administrator to update it.';
 $string['eventrepo_submitted'] = 'Repository submitted';
 $string['integritychecks'] = 'Verify authorship';
 $string['integritychecks_help'] = 'Compares repository metadata and file content hashes across submissions to detect exact duplicates. Results are shown to the teacher as evidence only and never change a grade automatically.';
+$string['messagenocidetected'] = 'No automated check appeared for commit {$a->commit} in the activity {$a->activity} before the timeout. If the repository has a GitHub Actions workflow, check that it ran, then use "Check again now".';
+$string['messagenocidetectedsubject'] = 'No automated check detected in {$a}';
+$string['messageprovider:nocidetected'] = 'No automated check detected on a submission';
 $string['modulename'] = 'CodeReview';
 $string['modulename_help'] = 'CodeReview assesses programming work hosted on GitHub. Students submit a repository URL and a commit SHA; the activity reads the automated check results GitHub Actions already produced for that commit, optionally adds an AI review, and presents everything on a dedicated screen where the teacher approves the final grade.';
 $string['modulenameplural'] = 'CodeReviews';
@@ -86,6 +95,8 @@ $string['rubric_help'] = 'Criteria used by the AI reviewer when suggesting a gra
 $string['sitetoken'] = 'Site GitHub token';
 $string['sitetoken_desc'] = 'A fine-grained personal access token with read-only access to public repositories. Without it the GitHub API allows only 60 requests per hour for the whole site, which is enough for demonstration but not for real use.';
 $string['submitrepo'] = 'Submit repository';
+$string['taskpollcheckruns'] = 'Read GitHub automated check results';
+$string['taskreconcilesubmissions'] = 'Close out submissions whose checks never finished';
 $string['templaterepourl'] = 'Template repository URL';
 $string['templaterepourl_help'] = 'The repository you distributed to students. Its files are used as a baseline so that shared template code is not reported as duplicated work.';
 $string['tokeninuse'] = 'Using the GitHub token of {$a}.';

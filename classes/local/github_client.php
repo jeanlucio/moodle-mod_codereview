@@ -80,6 +80,26 @@ class github_client {
     }
 
     /**
+     * Fetches the check-runs recorded for a commit.
+     *
+     * The filter is pinned to "latest" rather than left to the API default so that a
+     * job the student re-ran contributes a single result: with "all", the old failure
+     * and the new success would both land in the same denominator.
+     *
+     * @param string $owner The repository owner.
+     * @param string $name The repository name.
+     * @param string $sha The full commit SHA.
+     * @return array The decoded check-runs collection.
+     * @throws github_exception If the request fails.
+     */
+    public function get_check_runs(string $owner, string $name, string $sha): array {
+        return $this->request(
+            '/repos/' . rawurlencode($owner) . '/' . rawurlencode($name) . '/commits/' . rawurlencode($sha) . '/check-runs',
+            ['filter' => 'latest', 'per_page' => 100]
+        );
+    }
+
+    /**
      * Returns the number of requests left in the current rate limit window.
      *
      * @return int|null Null when no response has been seen yet.

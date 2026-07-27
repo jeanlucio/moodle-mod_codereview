@@ -26,6 +26,11 @@ defined('MOODLE_INTERNAL') || die();
 // phpcs:disable moodle.Files.LineLength
 
 $string['authorshipnotice'] = 'Os metadados do repositório são analisados para verificar a autoria desta entrega.';
+$string['checkrunnotcounted'] = 'Não conta para a nota (não é uma checagem do GitHub Actions)';
+$string['checkruns'] = 'Checagens automáticas';
+$string['cichecking'] = 'Checagens automáticas em execução...';
+$string['cicompleted'] = 'Checagens automáticas concluídas';
+$string['cierror'] = 'Não foi possível ler as checagens automáticas';
 $string['citimeout'] = 'Tempo limite da checagem automática (minutos)';
 $string['citimeout_help'] = 'Por quanto tempo consultar o GitHub em busca do resultado das checagens automáticas antes de desistir e informar que nenhum CI foi detectado.';
 $string['codereview:addinstance'] = 'Adicionar uma nova atividade CodeReview';
@@ -50,11 +55,15 @@ $string['errorgithubratelimit'] = 'O limite de requisições da API do GitHub fo
 $string['errorinvalidcommitsha'] = 'Informe o SHA completo do commit, com 40 caracteres hexadecimais.';
 $string['errorinvalidrepourl'] = 'Informe uma URL válida de repositório público do GitHub, por exemplo https://github.com/dono/repositorio.';
 $string['errornotpublic'] = 'Este repositório não é público. Esta atividade só avalia repositórios públicos.';
+$string['errorrecheckpending'] = 'Esta entrega ainda não foi verificada. Aguarde a primeira checagem automática antes de solicitar outra.';
 $string['errorrepositorynotfound'] = 'Este repositório não foi encontrado no GitHub. Confira a URL e tente de novo.';
 $string['errortokeninvalid'] = 'O token do GitHub em uso não é mais válido. Peça ao professor ou ao administrador para atualizá-lo.';
 $string['eventrepo_submitted'] = 'Repositório enviado';
 $string['integritychecks'] = 'Verificar autoria';
 $string['integritychecks_help'] = 'Compara metadados do repositório e hashes de conteúdo dos arquivos entre as entregas para detectar duplicatas exatas. O resultado é apresentado ao professor apenas como evidência e nunca altera uma nota automaticamente.';
+$string['messagenocidetected'] = 'Nenhuma checagem automática apareceu para o commit {$a->commit} na atividade {$a->activity} antes do tempo limite. Se o repositório tem um workflow do GitHub Actions, confira se ele executou e use "Verificar agora".';
+$string['messagenocidetectedsubject'] = 'Nenhuma checagem automática detectada em {$a}';
+$string['messageprovider:nocidetected'] = 'Nenhuma checagem automática detectada numa entrega';
 $string['modulename'] = 'CodeReview';
 $string['modulename_help'] = 'O CodeReview avalia trabalhos de programação hospedados no GitHub. O estudante envia a URL de um repositório e o SHA de um commit; a atividade lê o resultado das checagens automáticas que o GitHub Actions já produziu para aquele commit, opcionalmente acrescenta uma revisão por IA, e apresenta tudo numa tela dedicada onde o professor aprova a nota final.';
 $string['modulenameplural'] = 'CodeReviews';
@@ -86,6 +95,8 @@ $string['rubric_help'] = 'Critérios usados pela revisão por IA ao sugerir uma 
 $string['sitetoken'] = 'Token do GitHub do site';
 $string['sitetoken_desc'] = 'Um token de acesso pessoal fine-grained, somente leitura de repositórios públicos. Sem ele, a API do GitHub permite apenas 60 requisições por hora para o site inteiro, o que serve para demonstração mas não para uso real.';
 $string['submitrepo'] = 'Enviar repositório';
+$string['taskpollcheckruns'] = 'Ler o resultado das checagens automáticas do GitHub';
+$string['taskreconcilesubmissions'] = 'Encerrar entregas cujas checagens nunca terminaram';
 $string['templaterepourl'] = 'URL do repositório-molde';
 $string['templaterepourl_help'] = 'O repositório que você distribuiu aos estudantes. Os arquivos dele servem de linha de base para que o código comum do molde não seja apontado como trabalho duplicado.';
 $string['tokeninuse'] = 'Usando o token do GitHub de {$a}.';

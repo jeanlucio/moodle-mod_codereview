@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition.
+ * Message provider definitions.
  *
  * @package    mod_codereview
  * @copyright  2026 Jean Lúcio
@@ -24,9 +24,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_codereview';
-$plugin->version   = 2026072702;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = 'v1.0.0-dev';
+// MESSAGE_DEFAULT_ENABLED is the only default constant available across the whole
+// supported range: MESSAGE_DEFAULT_LOGGEDIN and MESSAGE_DEFAULT_LOGGEDOFF were
+// deprecated and are gone in Moodle 5.2, where referencing them makes the plugin
+// upgrade fail outright while still working on 4.5.
+$messageproviders = [
+    'nocidetected' => [
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+        ],
+    ],
+];
