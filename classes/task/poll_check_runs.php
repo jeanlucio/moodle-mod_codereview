@@ -90,6 +90,13 @@ class poll_check_runs extends adhoc_task {
         if ($status === submission_service::CI_NOCIDETECTED && $previous !== $status) {
             notifier::notify_no_ci_detected($instance, $submission);
         }
+
+        // The checks have settled one way or another, so their outcome can now go into
+        // the review prompt. A commit with no CI at all still gets reviewed: the code
+        // is there to read even when nothing ran against it.
+        if ($status !== submission_service::CI_ERROR) {
+            run_ai_review::queue($submissionid);
+        }
     }
 
     /**

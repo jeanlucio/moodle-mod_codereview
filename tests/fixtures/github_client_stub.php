@@ -36,6 +36,9 @@ class github_client_stub extends github_client {
     /** @var string[] Every path requested so far, in order. */
     protected array $calls = [];
 
+    /** @var string|null The archive bytes to return, or null when none was queued. */
+    protected ?string $archive = null;
+
     /**
      * Queues a successful response for an API path.
      *
@@ -99,12 +102,41 @@ class github_client_stub extends github_client {
     }
 
     /**
+     * Queues the archive bytes the repository download should return.
+     *
+     * @param string $bytes The raw zip bytes.
+     * @return self
+     */
+    public function set_archive(string $bytes): self {
+        $this->archive = $bytes;
+
+        return $this;
+    }
+
+    /**
      * Returns every path requested so far.
      *
      * @return string[]
      */
     public function get_calls(): array {
         return $this->calls;
+    }
+
+    /**
+     * Returns the queued archive instead of downloading one.
+     *
+     * @param string $path The API path, starting with a slash.
+     * @return string The queued archive bytes.
+     * @throws github_exception When no archive was queued.
+     */
+    protected function request_raw(string $path): string {
+        $this->calls[] = $path;
+
+        if ($this->archive === null) {
+            throw new github_exception('errorrepositorynotfound', 404, 'No archive queued for ' . $path);
+        }
+
+        return $this->archive;
     }
 
     /**

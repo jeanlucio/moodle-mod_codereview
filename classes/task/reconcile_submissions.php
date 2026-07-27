@@ -83,6 +83,13 @@ class reconcile_submissions extends scheduled_task {
             if ($status === submission_service::CI_NOCIDETECTED && isset($instances[$submission->codereview])) {
                 notifier::notify_no_ci_detected($instances[$submission->codereview], $submission);
             }
+
+            // The adhoc poller never got to hand over, so the review is queued here
+            // instead; otherwise a submission rescued by this task would sit without a
+            // suggestion forever.
+            if ($submission->aistatus === submission_service::AI_SKIPPED) {
+                run_ai_review::queue((int) $submission->id);
+            }
         }
     }
 }

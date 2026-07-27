@@ -25,6 +25,10 @@
 defined('MOODLE_INTERNAL') || die();
 // phpcs:disable moodle.Files.LineLength
 
+$string['aicompleted'] = 'Revisão por IA concluída';
+$string['aierror'] = 'Não foi possível concluir a revisão por IA';
+$string['aipending'] = 'Revisão por IA em andamento...';
+$string['aiskipped'] = 'Sem revisão por IA nesta atividade';
 $string['authorshipnotice'] = 'Os metadados do repositório são analisados para verificar a autoria desta entrega.';
 $string['checkrunnotcounted'] = 'Não conta para a nota (não é uma checagem do GitHub Actions)';
 $string['checkruns'] = 'Checagens automáticas';
@@ -54,9 +58,12 @@ $string['errorgithubapi'] = 'Não foi possível acessar a API do GitHub. Tente n
 $string['errorgithubratelimit'] = 'O limite de requisições da API do GitHub foi atingido. Tente novamente mais tarde.';
 $string['errorinvalidcommitsha'] = 'Informe o SHA completo do commit, com 40 caracteres hexadecimais.';
 $string['errorinvalidrepourl'] = 'Informe uma URL válida de repositório público do GitHub, por exemplo https://github.com/dono/repositorio.';
+$string['errormalformedairesponse'] = 'O provedor de IA devolveu uma resposta que não pôde ser usada.';
+$string['errornoreviewablecode'] = 'Nenhum arquivo de código revisável foi encontrado neste commit.';
 $string['errornotpublic'] = 'Este repositório não é público. Esta atividade só avalia repositórios públicos.';
 $string['errorrecheckpending'] = 'Esta entrega ainda não foi verificada. Aguarde a primeira checagem automática antes de solicitar outra.';
 $string['errorrepositorynotfound'] = 'Este repositório não foi encontrado no GitHub. Confira a URL e tente de novo.';
+$string['errorrepotoolarge'] = 'Este repositório é grande demais para ser revisado automaticamente.';
 $string['errortokeninvalid'] = 'O token do GitHub em uso não é mais válido. Peça ao professor ou ao administrador para atualizá-lo.';
 $string['eventrepo_submitted'] = 'Repositório enviado';
 $string['integritychecks'] = 'Verificar autoria';
@@ -97,6 +104,7 @@ $string['sitetoken_desc'] = 'Um token de acesso pessoal fine-grained, somente le
 $string['submitrepo'] = 'Enviar repositório';
 $string['taskpollcheckruns'] = 'Ler o resultado das checagens automáticas do GitHub';
 $string['taskreconcilesubmissions'] = 'Encerrar entregas cujas checagens nunca terminaram';
+$string['taskrunaireview'] = 'Gerar sugestões de nota por IA';
 $string['templaterepourl'] = 'URL do repositório-molde';
 $string['templaterepourl_help'] = 'O repositório que você distribuiu aos estudantes. Os arquivos dele servem de linha de base para que o código comum do molde não seja apontado como trabalho duplicado.';
 $string['tokeninuse'] = 'Usando o token do GitHub de {$a}.';

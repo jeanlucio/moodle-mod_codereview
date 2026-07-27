@@ -52,6 +52,15 @@ class submission_service {
     /** @var string The AI review has not been requested for this submission. */
     public const AI_SKIPPED = 'skipped';
 
+    /** @var string The AI review is queued or running. */
+    public const AI_PENDING = 'pending';
+
+    /** @var string A usable suggestion was stored. */
+    public const AI_COMPLETED = 'completed';
+
+    /** @var string The provider failed or answered with something unusable. */
+    public const AI_ERROR = 'error';
+
     /** @var string The teacher has not approved a grade yet. */
     public const GRADE_NOTGRADED = 'notgraded';
 

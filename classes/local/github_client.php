@@ -100,6 +100,44 @@ class github_client {
     }
 
     /**
+     * Fetches the full file listing of a commit in one request.
+     *
+     * Every entry carries a path, a content hash and a size, which is what lets the
+     * size budget be applied before anything is downloaded, and what feeds the
+     * authorship fingerprints without a second call.
+     *
+     * @param string $owner The repository owner.
+     * @param string $name The repository name.
+     * @param string $sha The full commit SHA.
+     * @return array The decoded tree resource.
+     * @throws github_exception If the request fails.
+     */
+    public function get_tree(string $owner, string $name, string $sha): array {
+        return $this->request(
+            '/repos/' . rawurlencode($owner) . '/' . rawurlencode($name) . '/git/trees/' . rawurlencode($sha),
+            ['recursive' => 1]
+        );
+    }
+
+    /**
+     * Downloads the whole commit as a zip archive, in a single request.
+     *
+     * Reading files one by one costs a request each, which exhausts the API quota on
+     * a single medium sized repository. One archive covers the entire snapshot.
+     *
+     * @param string $owner The repository owner.
+     * @param string $name The repository name.
+     * @param string $sha The full commit SHA.
+     * @return string The raw archive bytes.
+     * @throws github_exception If the request fails.
+     */
+    public function get_archive(string $owner, string $name, string $sha): string {
+        $path = '/repos/' . rawurlencode($owner) . '/' . rawurlencode($name) . '/zipball/' . rawurlencode($sha);
+
+        return $this->request_raw($path);
+    }
+
+    /**
      * Returns the number of requests left in the current rate limit window.
      *
      * @return int|null Null when no response has been seen yet.
@@ -144,6 +182,37 @@ class github_client {
         }
 
         return $decoded;
+    }
+
+    /**
+     * Performs a GET request and returns the body untouched.
+     *
+     * Used for the archive endpoint, whose body is binary rather than JSON and which
+     * answers with a redirect to a separate download host.
+     *
+     * @param string $path The API path, already URL-encoded, starting with a slash.
+     * @return string The raw response body.
+     * @throws github_exception On any non-200 response.
+     */
+    protected function request_raw(string $path): string {
+        $curl = new curl();
+        $curl->setHeader($this->build_headers());
+        $body = $curl->get(self::BASE . $path, [], [
+            'CURLOPT_TIMEOUT' => 120,
+            'CURLOPT_CONNECTTIMEOUT' => 10,
+            'CURLOPT_FOLLOWLOCATION' => 1,
+            'CURLOPT_MAXREDIRS' => 3,
+        ]);
+
+        $info = $curl->get_info();
+        $status = (int) ($info['http_code'] ?? 0);
+        $this->capture_rate_limit($curl);
+
+        if ($status !== 200) {
+            throw new github_exception($this->error_key($status), $status, 'GET ' . $path);
+        }
+
+        return (string) $body;
     }
 
     /**

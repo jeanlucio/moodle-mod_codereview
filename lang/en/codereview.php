@@ -25,6 +25,10 @@
 defined('MOODLE_INTERNAL') || die();
 // phpcs:disable moodle.Files.LineLength
 
+$string['aicompleted'] = 'AI review finished';
+$string['aierror'] = 'The AI review could not be completed';
+$string['aipending'] = 'AI review in progress...';
+$string['aiskipped'] = 'No AI review for this activity';
 $string['authorshipnotice'] = 'Repository metadata is analysed to verify the authorship of this submission.';
 $string['checkrunnotcounted'] = 'Not counted towards the grade (not a GitHub Actions check)';
 $string['checkruns'] = 'Automated checks';
@@ -54,9 +58,12 @@ $string['errorgithubapi'] = 'The GitHub API could not be reached. Please try aga
 $string['errorgithubratelimit'] = 'The GitHub API rate limit was reached. Please try again later.';
 $string['errorinvalidcommitsha'] = 'Enter the full 40-character commit SHA, using hexadecimal characters only.';
 $string['errorinvalidrepourl'] = 'Enter a valid public GitHub repository URL, for example https://github.com/owner/repository.';
+$string['errormalformedairesponse'] = 'The AI provider returned an answer that could not be used.';
+$string['errornoreviewablecode'] = 'No reviewable source file was found in this commit.';
 $string['errornotpublic'] = 'That repository is not public. This activity can only assess public repositories.';
 $string['errorrecheckpending'] = 'This submission has not been checked yet. Wait for the first automated check before requesting another.';
 $string['errorrepositorynotfound'] = 'That repository was not found on GitHub. Check the URL and try again.';
+$string['errorrepotoolarge'] = 'This repository is too large to be reviewed automatically.';
 $string['errortokeninvalid'] = 'The GitHub token in use is no longer valid. Ask your teacher or administrator to update it.';
 $string['eventrepo_submitted'] = 'Repository submitted';
 $string['integritychecks'] = 'Verify authorship';
@@ -97,6 +104,7 @@ $string['sitetoken_desc'] = 'A fine-grained personal access token with read-only
 $string['submitrepo'] = 'Submit repository';
 $string['taskpollcheckruns'] = 'Read GitHub automated check results';
 $string['taskreconcilesubmissions'] = 'Close out submissions whose checks never finished';
+$string['taskrunaireview'] = 'Generate AI grade suggestions';
 $string['templaterepourl'] = 'Template repository URL';
 $string['templaterepourl_help'] = 'The repository you distributed to students. Its files are used as a baseline so that shared template code is not reported as duplicated work.';
 $string['tokeninuse'] = 'Using the GitHub token of {$a}.';
