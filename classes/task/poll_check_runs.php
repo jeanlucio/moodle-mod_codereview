@@ -96,6 +96,7 @@ class poll_check_runs extends adhoc_task {
         // is there to read even when nothing ran against it.
         if ($status !== submission_service::CI_ERROR) {
             run_ai_review::queue($submissionid);
+            run_integrity_check::queue($submissionid);
         }
     }
 

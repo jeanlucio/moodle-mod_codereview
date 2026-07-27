@@ -123,6 +123,24 @@
         <INDEX NAME="submission" UNIQUE="false" FIELDS="submission"/>
       </INDEXES>
     </TABLE>
+    <TABLE NAME="codereview_commits" COMMENT="Ancestor commit SHAs of a submission, used to spot shared history.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="submission" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="codereview" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="sha" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="position" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Distance from the submitted commit, 0 being the commit itself."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="submission" TYPE="foreign" FIELDS="submission" REFTABLE="codereview_submissions" REFFIELDS="id"/>
+        <KEY NAME="codereview" TYPE="foreign" FIELDS="codereview" REFTABLE="codereview" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="codereview-sha" UNIQUE="false" FIELDS="codereview, sha"/>
+      </INDEXES>
+    </TABLE>
     <TABLE NAME="codereview_flags" COMMENT="Authorship signals. Always informative, never punitive.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>

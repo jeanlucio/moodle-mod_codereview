@@ -267,6 +267,7 @@ class submission_service {
         $DB->delete_records('codereview_checkruns', ['submission' => $submissionid]);
         $DB->delete_records('codereview_airesults', ['submission' => $submissionid]);
         $DB->delete_records('codereview_blobs', ['submission' => $submissionid]);
+        $DB->delete_records('codereview_commits', ['submission' => $submissionid]);
         $DB->delete_records('codereview_flags', ['submission' => $submissionid]);
         $DB->delete_records('codereview_flags', ['peersubmission' => $submissionid]);
     }

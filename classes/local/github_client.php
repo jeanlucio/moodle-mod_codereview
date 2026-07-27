@@ -80,6 +80,26 @@ class github_client {
     }
 
     /**
+     * Fetches a commit and its ancestors, newest first.
+     *
+     * A clone that was pushed unchanged keeps the ancestors byte-identical, so this
+     * listing is what shows two submissions sharing a history.
+     *
+     * @param string $owner The repository owner.
+     * @param string $name The repository name.
+     * @param string $sha The full commit SHA to walk back from.
+     * @param int $limit How many commits to return, capped at 100 by the API.
+     * @return array The decoded commit list.
+     * @throws github_exception If the request fails.
+     */
+    public function get_commits(string $owner, string $name, string $sha, int $limit = 100): array {
+        return $this->request(
+            '/repos/' . rawurlencode($owner) . '/' . rawurlencode($name) . '/commits',
+            ['sha' => $sha, 'per_page' => min(100, max(1, $limit))]
+        );
+    }
+
+    /**
      * Fetches the check-runs recorded for a commit.
      *
      * The filter is pinned to "latest" rather than left to the API default so that a

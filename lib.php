@@ -133,6 +133,7 @@ function codereview_delete_instance(int $id): bool {
         $DB->delete_records_select('codereview_flags', "submission $insql", $params);
     }
 
+    $DB->delete_records('codereview_commits', ['codereview' => $id]);
     $DB->delete_records('codereview_blobs', ['codereview' => $id]);
     $DB->delete_records('codereview_submissions', ['codereview' => $id]);
     $DB->delete_records('codereview', ['id' => $id]);
