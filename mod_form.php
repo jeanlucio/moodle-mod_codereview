@@ -145,6 +145,65 @@ class mod_codereview_mod_form extends moodleform_mod {
     }
 
     /**
+     * Adds the activity's own completion rules.
+     *
+     * @return string[] The element names the rules live under.
+     */
+    public function add_completion_rules(): array {
+        $mform = $this->_form;
+
+        $mform->addElement(
+            'advcheckbox',
+            'completionsubmit',
+            '',
+            get_string('completionsubmit', 'mod_codereview')
+        );
+
+        $group = [
+            $mform->createElement(
+                'advcheckbox',
+                'completionchecksenabled',
+                '',
+                get_string('completionchecks', 'mod_codereview')
+            ),
+            $mform->createElement('text', 'completionchecks', '', ['size' => 3]),
+        ];
+        $mform->setType('completionchecks', PARAM_INT);
+        $mform->addGroup($group, 'completionchecksgroup', '', ' ', false);
+        $mform->hideIf('completionchecks', 'completionchecksenabled', 'notchecked');
+
+        return ['completionsubmit', 'completionchecksgroup'];
+    }
+
+    /**
+     * Reports whether any of the activity's own rules is switched on.
+     *
+     * @param array $data The submitted data.
+     * @return bool
+     */
+    public function completion_rule_enabled($data): bool {
+        $checks = !empty($data['completionchecksenabled']) && (int) ($data['completionchecks'] ?? 0) > 0;
+
+        return !empty($data['completionsubmit']) || $checks;
+    }
+
+    /**
+     * Derives the checkbox state from the stored value before the form is shown.
+     *
+     * @param array $defaultvalues The values about to be loaded, modified in place.
+     * @return void
+     */
+    public function data_preprocessing(&$defaultvalues): void {
+        parent::data_preprocessing($defaultvalues);
+
+        $defaultvalues['completionchecksenabled'] = !empty($defaultvalues['completionchecks']) ? 1 : 0;
+
+        if (empty($defaultvalues['completionchecks'])) {
+            $defaultvalues['completionchecks'] = 1;
+        }
+    }
+
+    /**
      * Validates the submitted settings.
      *
      * @param array $data The submitted data.

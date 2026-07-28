@@ -94,9 +94,35 @@ class poll_check_runs extends adhoc_task {
         // The checks have settled one way or another, so their outcome can now go into
         // the review prompt. A commit with no CI at all still gets reviewed: the code
         // is there to read even when nothing ran against it.
+        // The "N checks passed" completion rule reads the check results, and Moodle has
+        // no task that re-evaluates automatic completion on its own: without this call
+        // at the moment the results land, the badge would stay incomplete forever even
+        // once the condition is genuinely met.
+        $this->update_completion($instance, $submission);
+
         if ($status !== submission_service::CI_ERROR) {
             run_ai_review::queue($submissionid);
             run_integrity_check::queue($submissionid);
+        }
+    }
+
+    /**
+     * Recomputes activity completion for the student the submission belongs to.
+     *
+     * @param \stdClass $instance The codereview instance row.
+     * @param \stdClass $submission The submission that was just polled.
+     * @return void
+     */
+    protected function update_completion(\stdClass $instance, \stdClass $submission): void {
+        $cm = get_coursemodule_from_instance('codereview', $instance->id, 0, false, IGNORE_MISSING);
+        if (!$cm) {
+            return;
+        }
+
+        $completion = new \completion_info(get_course($instance->course));
+
+        if ($completion->is_enabled($cm)) {
+            $completion->update_state($cm, COMPLETION_UNKNOWN, (int) $submission->userid);
         }
     }
 

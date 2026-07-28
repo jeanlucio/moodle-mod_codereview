@@ -45,6 +45,14 @@ $PAGE->set_pagelayout('incourse');
 
 $PAGE->add_body_class('path-mod-codereview');
 
+\mod_codereview\event\course_module_viewed::create([
+    'context' => $context,
+    'objectid' => $instance->id,
+])->trigger();
+
+$completion = new completion_info($course);
+$completion->set_module_viewed($cm);
+
 $cangrade = has_capability('mod/codereview:grade', $context);
 $cansubmit = has_capability('mod/codereview:submit', $context);
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/codereview/db" VERSION="20260727" COMMENT="XMLDB file for Moodle mod/codereview"
+<XMLDB PATH="mod/codereview/db" VERSION="20260728" COMMENT="XMLDB file for Moodle mod/codereview"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -21,6 +21,7 @@
         <FIELD NAME="integritychecks" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="duedate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Flags a submission as late; does not block it."/>
         <FIELD NAME="cutoffdate" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Blocks new submissions and resubmissions."/>
+        <FIELD NAME="completionsubmit" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Custom completion rule: the submission must have been graded. 0 disables it."/>
         <FIELD NAME="completionchecks" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Custom completion rule: minimum number of passing checks. 0 disables it."/>
         <FIELD NAME="tokenuserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Pointer, never a secret: whose personal GitHub token this instance uses. 0 falls back to the site token."/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>

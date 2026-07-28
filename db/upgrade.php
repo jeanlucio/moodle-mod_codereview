@@ -55,5 +55,16 @@ function xmldb_codereview_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026072704, 'codereview');
     }
 
+    if ($oldversion < 2026072800) {
+        $table = new xmldb_table('codereview');
+        $field = new xmldb_field('completionsubmit', XMLDB_TYPE_INTEGER, '2', null, XMLDB_NOTNULL, null, '0', 'cutoffdate');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        upgrade_mod_savepoint(true, 2026072800, 'codereview');
+    }
+
     return true;
 }

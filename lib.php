@@ -25,10 +25,6 @@
 /**
  * Declares which core features the activity supports.
  *
- * FEATURE_COMPLETION_HAS_RULES is deliberately absent until the custom completion
- * class, the get_coursemodule_info hook and the update_state call all exist, since
- * declaring it alone produces a rule that is silently never evaluated.
- *
  * @param string $feature The feature constant being queried.
  * @return mixed True or false for boolean features, a string for purpose, null when unknown.
  */
@@ -39,6 +35,7 @@ function codereview_supports(string $feature) {
         case FEATURE_GRADE_HAS_GRADE:
         case FEATURE_BACKUP_MOODLE2:
         case FEATURE_COMPLETION_TRACKS_VIEWS:
+        case FEATURE_COMPLETION_HAS_RULES:
         case FEATURE_GROUPS:
         case FEATURE_GROUPINGS:
             return true;
@@ -104,6 +101,9 @@ function codereview_prepare_instance_data(stdClass $data): void {
     $data->weightai = max(0, min(100, (int) ($data->weightai ?? (100 - $data->weighttests))));
     $data->citimeout = max(1, (int) ($data->citimeout ?? 30));
     $data->integritychecks = empty($data->integritychecks) ? 0 : 1;
+    $data->completionsubmit = empty($data->completionsubmit) ? 0 : 1;
+    $data->completionchecks = empty($data->completionchecksenabled) ? 0 : max(0, (int) ($data->completionchecks ?? 0));
+    unset($data->completionchecksenabled);
 
     // The instance stores only a pointer to whoever owns the token, never the token
     // itself, so that no secret ever travels through a course-scoped form.
@@ -149,6 +149,42 @@ function codereview_delete_instance(int $id): bool {
     $DB->delete_records('codereview', ['id' => $id]);
 
     return true;
+}
+
+/**
+ * Supplies the course module cache, including the custom completion rule values.
+ *
+ * Without the customdata below, get_available_custom_rules() returns nothing and the
+ * rules are silently skipped everywhere, even though the completion class exists and
+ * is correct. Nothing warns about that: it only shows up as a badge that never turns
+ * complete.
+ *
+ * @param stdClass $coursemodule The course module being cached.
+ * @return cached_cm_info|bool
+ */
+function codereview_get_coursemodule_info(stdClass $coursemodule) {
+    global $DB;
+
+    $fields = 'id, name, intro, introformat, completionsubmit, completionchecks';
+    $instance = $DB->get_record('codereview', ['id' => $coursemodule->instance], $fields);
+
+    if (!$instance) {
+        return false;
+    }
+
+    $info = new cached_cm_info();
+    $info->name = $instance->name;
+
+    if ($coursemodule->showdescription) {
+        $info->content = format_module_intro('codereview', $instance, $coursemodule->id, false);
+    }
+
+    if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
+        $info->customdata['customcompletionrules']['completionsubmit'] = (int) $instance->completionsubmit;
+        $info->customdata['customcompletionrules']['completionchecks'] = (int) $instance->completionchecks;
+    }
+
+    return $info;
 }
 
 /**

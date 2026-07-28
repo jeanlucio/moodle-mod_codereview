@@ -14,19 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
+namespace mod_codereview\event;
+
+use core\event\course_module_viewed as base_course_module_viewed;
+
 /**
- * Plugin version definition.
+ * Triggered when the activity is viewed.
  *
  * @package    mod_codereview
  * @copyright  2026 Jean Lúcio
  * @license    https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'mod_codereview';
-$plugin->version   = 2026072800;
-$plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity  = MATURITY_ALPHA;
-$plugin->release   = 'v1.0.0-dev';
+class course_module_viewed extends base_course_module_viewed {
+    /**
+     * Initialises the event properties.
+     *
+     * @return void
+     */
+    protected function init(): void {
+        $this->data['crud'] = 'r';
+        $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
+        $this->data['objecttable'] = 'codereview';
+    }
+}
