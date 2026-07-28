@@ -66,5 +66,53 @@ function xmldb_codereview_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026072800, 'codereview');
     }
 
+    if ($oldversion < 2026072805) {
+        $instance = new xmldb_table('codereview');
+
+        $teamsubmission = new xmldb_field(
+            'teamsubmission',
+            XMLDB_TYPE_INTEGER,
+            '2',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'tokenuserid'
+        );
+        if (!$dbman->field_exists($instance, $teamsubmission)) {
+            $dbman->add_field($instance, $teamsubmission);
+        }
+
+        $grouping = new xmldb_field(
+            'teamsubmissiongroupingid',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'teamsubmission'
+        );
+        if (!$dbman->field_exists($instance, $grouping)) {
+            $dbman->add_field($instance, $grouping);
+        }
+
+        // Zero on every existing row, which is what an individual submission carries.
+        $submissions = new xmldb_table('codereview_submissions');
+        $groupid = new xmldb_field('groupid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'userid');
+        if (!$dbman->field_exists($submissions, $groupid)) {
+            $dbman->add_field($submissions, $groupid);
+        }
+
+        // Not unique: individual submissions all share groupid 0, so one row per
+        // group is enforced by submission_service instead of by the schema.
+        $index = new xmldb_index('codereview-groupid', XMLDB_INDEX_NOTUNIQUE, ['codereview', 'groupid']);
+        if (!$dbman->index_exists($submissions, $index)) {
+            $dbman->add_index($submissions, $index);
+        }
+
+        upgrade_mod_savepoint(true, 2026072805, 'codereview');
+    }
+
     return true;
 }

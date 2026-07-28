@@ -90,7 +90,45 @@ class submission_service {
     }
 
     /**
-     * Records a submission, replacing the student's previous one when there is one.
+     * Returns the submission that counts for a user, or false when there is none.
+     *
+     * On a team submission the work belongs to the group, so a student sees what a
+     * teammate submitted rather than an empty form. Looking this up by user id
+     * would show every member their own row and let each of them submit a
+     * repository of their own, which is exactly what a team submission is not.
+     *
+     * @param stdClass $instance The codereview instance row.
+     * @param int $userid The user whose submission is wanted.
+     * @param group_resolver|null $resolver Reuses an already-built resolver when there is one.
+     * @return stdClass|false The submission record, or false.
+     */
+    public static function find_for_user(stdClass $instance, int $userid, ?group_resolver $resolver = null) {
+        global $DB;
+
+        $resolver = $resolver ?? new group_resolver($instance);
+
+        if (!$resolver->is_team_submission()) {
+            return $DB->get_record('codereview_submissions', [
+                'codereview' => $instance->id,
+                'userid' => $userid,
+            ]);
+        }
+
+        $groupid = $resolver->group_for($userid);
+        if ($groupid <= 0) {
+            return false;
+        }
+
+        // One row per group is enforced here rather than by a unique index, which
+        // cannot exist while individual submissions all share a group id of zero.
+        return $DB->get_record('codereview_submissions', [
+            'codereview' => $instance->id,
+            'groupid' => $groupid,
+        ], '*', IGNORE_MULTIPLE);
+    }
+
+    /**
+     * Records a submission, replacing the previous one when there is one.
      *
      * @param stdClass $instance The codereview instance row.
      * @param context_module $context The activity context, used for the event.
@@ -98,7 +136,8 @@ class submission_service {
      * @param string $repourl The repository URL as typed by the student.
      * @param string $commitsha The commit SHA as typed by the student.
      * @return stdClass The stored submission record.
-     * @throws moodle_exception If the activity is closed, already graded, or the repository is unusable.
+     * @throws moodle_exception If the activity is closed, already graded, the student
+     *         resolves to no single group, or the repository is unusable.
      */
     public function submit(
         stdClass $instance,
@@ -115,10 +154,13 @@ class submission_service {
             throw new moodle_exception('errorcutoffpassed', 'mod_codereview');
         }
 
-        $existing = $DB->get_record('codereview_submissions', [
-            'codereview' => $instance->id,
-            'userid' => $userid,
-        ]);
+        $resolver = new group_resolver($instance);
+        if ($reason = $resolver->blocked_reason($userid)) {
+            throw new moodle_exception($reason, 'mod_codereview');
+        }
+        $groupid = $resolver->group_for($userid);
+
+        $existing = self::find_for_user($instance, $userid, $resolver);
 
         if ($existing && $existing->gradestatus === self::GRADE_GRADED) {
             throw new moodle_exception('erroralreadygraded', 'mod_codereview');
@@ -131,6 +173,7 @@ class submission_service {
         $commit = $this->fetch_commit($parsed['owner'], $parsed['name'], $sha);
 
         $record = $this->build_record($instance, $userid, $parsed, $sha, $repo, $commit, $now);
+        $record->groupid = $groupid;
 
         if ($existing) {
             $record->id = $existing->id;

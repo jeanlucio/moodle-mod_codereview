@@ -22,6 +22,7 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use mod_codereview\local\submission_service;
 
 /**
  * Web service that reports the status of the caller's own submission.
@@ -59,11 +60,11 @@ class get_submission_status extends external_api {
         require_capability('mod/codereview:submit', $context);
 
         // Bound to both the instance and the caller: a submission id is never trusted
-        // from the client, so a foreign one cannot be read through this function.
-        $submission = $DB->get_record('codereview_submissions', [
-            'codereview' => $cm->instance,
-            'userid' => $USER->id,
-        ]);
+        // from the client, so a foreign one cannot be read through this function. On a
+        // team submission the caller's own group is what the lookup resolves to, which
+        // keeps that property while letting every member follow the same submission.
+        $instance = $DB->get_record('codereview', ['id' => $cm->instance], '*', MUST_EXIST);
+        $submission = submission_service::find_for_user($instance, (int) $USER->id);
 
         if (!$submission) {
             return [

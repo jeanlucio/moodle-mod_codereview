@@ -236,24 +236,59 @@ function codereview_grade_item_update(stdClass $codereview, $grades = null): int
 function codereview_get_user_grades(stdClass $codereview, int $userid = 0): array {
     global $DB;
 
-    $params = ['codereview' => $codereview->id];
-    $where = '';
-
-    if ($userid) {
-        $where = ' AND s.userid = :userid';
-        $params['userid'] = $userid;
-    }
-
-    $sql = "SELECT s.userid AS userid, g.finalgrade AS rawgrade, g.timemodified AS dategraded,
+    // Every approved grade of the instance is fetched even when one user was asked
+    // for, because on a team submission the row that carries their grade belongs to
+    // whoever submitted it, and filtering on s.userid would miss it.
+    $sql = "SELECT s.id AS submissionid, s.userid AS userid, s.groupid AS groupid,
+                   g.finalgrade AS rawgrade, g.timemodified AS dategraded,
                    g.graderid AS usermodified, g.timecreated AS datesubmitted
               FROM {codereview_submissions} s
               JOIN {codereview_grades} g ON g.submission = s.id
-             WHERE s.codereview = :codereview AND g.finalgrade IS NOT NULL" . $where;
+             WHERE s.codereview = :codereview AND g.finalgrade IS NOT NULL";
+
+    $rows = $DB->get_records_sql($sql, ['codereview' => $codereview->id]);
+    if (!$rows) {
+        return [];
+    }
+
+    $groupids = [];
+    foreach ($rows as $row) {
+        if ($row->groupid > 0) {
+            $groupids[(int) $row->groupid] = true;
+        }
+    }
+
+    // One query for every group involved rather than one per graded submission.
+    $membersbygroup = [];
+    if ($groupids) {
+        [$insql, $params] = $DB->get_in_or_equal(array_keys($groupids), SQL_PARAMS_NAMED);
+        $memberships = $DB->get_records_select('groups_members', "groupid $insql", $params, '', 'id, groupid, userid');
+        foreach ($memberships as $membership) {
+            $membersbygroup[(int) $membership->groupid][] = (int) $membership->userid;
+        }
+    }
 
     $grades = [];
-    foreach ($DB->get_records_sql($sql, $params) as $record) {
-        $record->id = $record->userid;
-        $grades[$record->userid] = $record;
+    foreach ($rows as $row) {
+        $owners = $row->groupid > 0
+            ? ($membersbygroup[(int) $row->groupid] ?? [])
+            : [(int) $row->userid];
+
+        foreach ($owners as $ownerid) {
+            if ($userid && $ownerid !== $userid) {
+                continue;
+            }
+
+            $grade = new stdClass();
+            $grade->id = $ownerid;
+            $grade->userid = $ownerid;
+            $grade->rawgrade = $row->rawgrade;
+            $grade->dategraded = $row->dategraded;
+            $grade->usermodified = $row->usermodified;
+            $grade->datesubmitted = $row->datesubmitted;
+
+            $grades[$ownerid] = $grade;
+        }
     }
 
     return $grades;

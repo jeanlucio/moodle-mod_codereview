@@ -79,10 +79,12 @@ class recheck_ci extends external_api {
             require_capability('mod/codereview:submit', $context);
         }
 
-        $submission = $DB->get_record('codereview_submissions', [
-            'codereview' => $cm->instance,
-            'userid' => $targetid,
-        ], '*', MUST_EXIST);
+        $instance = $DB->get_record('codereview', ['id' => $cm->instance], '*', MUST_EXIST);
+        $submission = submission_service::find_for_user($instance, $targetid);
+
+        if (!$submission) {
+            throw new moodle_exception('errornosubmission', 'mod_codereview');
+        }
 
         if ($submission->cistatus === submission_service::CI_PENDING) {
             throw new moodle_exception('errorrecheckpending', 'mod_codereview');

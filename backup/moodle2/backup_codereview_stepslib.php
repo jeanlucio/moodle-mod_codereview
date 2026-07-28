@@ -46,12 +46,13 @@ class backup_codereview_activity_structure_step extends backup_activity_structur
             'name', 'intro', 'introformat', 'grade', 'weighttests', 'weightai',
             'citimeout', 'rubric', 'rubricformat', 'templaterepourl', 'integritychecks',
             'duedate', 'cutoffdate', 'completionsubmit', 'completionchecks',
-            'tokenuserid', 'timecreated', 'timemodified',
+            'tokenuserid', 'teamsubmission', 'teamsubmissiongroupingid',
+            'timecreated', 'timemodified',
         ]);
 
         $submissions = new backup_nested_element('submissions');
         $submission = new backup_nested_element('submission', ['id'], [
-            'userid', 'repourl', 'repoowner', 'reponame', 'commitsha',
+            'userid', 'groupid', 'repourl', 'repoowner', 'reponame', 'commitsha',
             'commitauthordate', 'repocreatedat', 'repopushedat', 'isfork', 'forkparent',
             'authorlogin', 'cistatus', 'aistatus', 'gradestatus', 'islate', 'truncated',
             'errormessage', 'timecreated', 'timemodified',
@@ -127,6 +128,7 @@ class backup_codereview_activity_structure_step extends backup_activity_structur
         }
 
         $submission->annotate_ids('user', 'userid');
+        $submission->annotate_ids('group', 'groupid');
         $grade->annotate_ids('user', 'graderid');
         $codereview->annotate_ids('user', 'tokenuserid');
         $codereview->annotate_files('mod_codereview', 'intro', null);

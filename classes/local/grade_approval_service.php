@@ -92,8 +92,13 @@ class grade_approval_service {
         ]);
         $DB->set_field('codereview_submissions', 'timemodified', $now, ['id' => $submission->id]);
 
-        codereview_update_grades($instance, (int) $submission->userid);
-        $this->update_completion($instance, $context, (int) $submission->userid);
+        // Everyone the submission counts for, which on a team submission is the whole
+        // group. Passing only the submitter would leave the teammates ungraded and
+        // their completion untouched, with nothing on screen to say why.
+        foreach ($this->owners_of($instance, $submission) as $ownerid) {
+            codereview_update_grades($instance, $ownerid);
+            $this->update_completion($instance, $context, $ownerid);
+        }
 
         grade_approved::create_from_submission($context, $submission, $finalgrade)->trigger();
 
@@ -125,9 +130,29 @@ class grade_approval_service {
         ]);
         $DB->set_field('codereview_submissions', 'timemodified', time(), ['id' => $submission->id]);
 
-        $this->update_completion($instance, $context, (int) $submission->userid);
+        foreach ($this->owners_of($instance, $submission) as $ownerid) {
+            $this->update_completion($instance, $context, $ownerid);
+        }
 
         submission_reopened::create_from_submission($context, $submission)->trigger();
+    }
+
+    /**
+     * Returns everyone a decision on this submission applies to.
+     *
+     * Membership is read at the moment of approving rather than stored with the
+     * submission, so a student who joins the group before it is graded receives the
+     * grade, and one who leaves does not. That matches where the work sits: the
+     * repository belongs to the group, not to a roster frozen at submit time.
+     *
+     * @param stdClass $instance The codereview instance row.
+     * @param stdClass $submission The submission being acted on.
+     * @return int[] User ids.
+     */
+    protected function owners_of(stdClass $instance, stdClass $submission): array {
+        $resolver = new group_resolver($instance);
+
+        return $resolver->members_of((int) ($submission->groupid ?? 0), (int) $submission->userid);
     }
 
     /**

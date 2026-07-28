@@ -99,10 +99,44 @@ class mod_codereview_mod_form extends moodleform_mod {
         $mform->addHelpButton('cutoffdate', 'cutoffdate', 'mod_codereview');
 
         $this->add_token_elements();
+        $this->add_team_elements();
 
         $this->standard_grading_coursemodule_elements();
         $this->standard_coursemodule_elements();
         $this->add_action_buttons();
+    }
+
+    /**
+     * Adds the team-submission elements.
+     *
+     * The grouping list is built from the course's own groupings, so an instance can
+     * take its teams from one set of groups while the course uses others for
+     * something else entirely.
+     *
+     * @return void
+     */
+    protected function add_team_elements(): void {
+        $mform = $this->_form;
+
+        $mform->addElement('header', 'teamheader', get_string('teamheader', 'mod_codereview'));
+
+        $mform->addElement('selectyesno', 'teamsubmission', get_string('teamsubmission', 'mod_codereview'));
+        $mform->setDefault('teamsubmission', 0);
+        $mform->addHelpButton('teamsubmission', 'teamsubmission', 'mod_codereview');
+
+        $options = [0 => get_string('none')];
+        foreach (groups_get_all_groupings($this->current->course ?? 0) as $grouping) {
+            $options[$grouping->id] = format_string($grouping->name);
+        }
+
+        $mform->addElement(
+            'select',
+            'teamsubmissiongroupingid',
+            get_string('teamsubmissiongroupingid', 'mod_codereview'),
+            $options
+        );
+        $mform->addHelpButton('teamsubmissiongroupingid', 'teamsubmissiongroupingid', 'mod_codereview');
+        $mform->hideIf('teamsubmissiongroupingid', 'teamsubmission', 'eq', 0);
     }
 
     /**

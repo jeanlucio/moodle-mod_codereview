@@ -24,6 +24,8 @@
         <FIELD NAME="completionsubmit" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Custom completion rule: the submission must have been graded. 0 disables it."/>
         <FIELD NAME="completionchecks" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Custom completion rule: minimum number of passing checks. 0 disables it."/>
         <FIELD NAME="tokenuserid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Pointer, never a secret: whose personal GitHub token this instance uses. 0 falls back to the site token."/>
+        <FIELD NAME="teamsubmission" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="One repository per group: any member submits and the result counts for everyone."/>
+        <FIELD NAME="teamsubmissiongroupingid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Restricts which groups form teams. 0 means every group in the course."/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
       </FIELDS>
@@ -32,11 +34,12 @@
         <KEY NAME="course" TYPE="foreign" FIELDS="course" REFTABLE="course" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="codereview_submissions" COMMENT="One live submission per student per instance.">
+    <TABLE NAME="codereview_submissions" COMMENT="One live submission per student, or per group when the instance is a team submission.">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="codereview" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
-        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Who submitted. On a team submission this is the member who acted, not the owner of the work."/>
+        <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The group the submission belongs to; 0 on an individual submission."/>
         <FIELD NAME="repourl" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="repoowner" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="reponame" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
@@ -63,6 +66,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="codereview-userid" UNIQUE="true" FIELDS="codereview, userid"/>
+        <INDEX NAME="codereview-groupid" UNIQUE="false" FIELDS="codereview, groupid"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="codereview_checkruns" COMMENT="GitHub Actions check-runs recorded for the submitted commit.">

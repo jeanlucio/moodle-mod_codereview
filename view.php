@@ -64,16 +64,27 @@ if (has_capability('mod/codereview:grade', $context)) {
     $table->define_baseurl($PAGE->url);
     $table->out(30, true);
 
+    // Students stranded outside a group would otherwise be invisible here: they
+    // cannot submit, so they never produce a row for the teacher to miss.
+    if (!empty($instance->teamsubmission)) {
+        $stranded = \mod_codereview\local\group_resolver::count_ungrouped($instance, $context, (int) $groupid);
+        if ($stranded > 0) {
+            echo $OUTPUT->notification(
+                get_string('membersungrouped', 'mod_codereview', $stranded),
+                \core\output\notification::NOTIFY_WARNING
+            );
+        }
+    }
+
     echo $OUTPUT->footer();
     exit;
 }
 
 require_capability('mod/codereview:submit', $context);
 
-$submission = $DB->get_record('codereview_submissions', [
-    'codereview' => $instance->id,
-    'userid' => $USER->id,
-]);
+// Resolved through the group when this is a team submission, so every member sees
+// the one repository the team submitted rather than an empty form of their own.
+$submission = submission_service::find_for_user($instance, (int) $USER->id);
 
 $locked = $submission && $submission->gradestatus === submission_service::GRADE_GRADED;
 $closed = !empty($instance->cutoffdate) && time() > (int) $instance->cutoffdate;

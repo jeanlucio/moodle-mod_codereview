@@ -112,6 +112,13 @@ class restore_codereview_activity_structure_step extends restore_activity_struct
         $data->codereview = $this->get_new_parentid('codereview');
         $data->userid = $this->get_mappingid('user', $data->userid);
 
+        // Groups are restored by an earlier task, so the mapping already exists here.
+        // Falling back to zero rather than to the old id keeps a stale reference to
+        // another course's group out of the table: a submission that loses its group
+        // reads as individual, which is wrong but harmless, where a foreign group id
+        // would silently attach the work to strangers.
+        $data->groupid = empty($data->groupid) ? 0 : ((int) $this->get_mappingid('group', $data->groupid) ?: 0);
+
         $newitemid = $DB->insert_record('codereview_submissions', $data);
         $this->set_mapping('codereview_submission', $oldid, $newitemid);
     }

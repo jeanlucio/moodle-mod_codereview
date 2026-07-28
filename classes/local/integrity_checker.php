@@ -88,7 +88,7 @@ class integrity_checker {
             $this->check_fork_of_peer($submission, $peers),
             $this->check_identical_commit($submission, $peers),
             $this->check_shared_history($instance, $submission, $peers),
-            $this->check_foreign_author($submission, $peers),
+            $this->check_foreign_author($instance, $submission, $peers),
             $this->check_imported_history($submission),
             $this->check_content_overlap($instance, $submission)
         );
@@ -226,11 +226,22 @@ class integrity_checker {
      * Matching a classmate's repository owner is strong; merely differing from the
      * repository owner is common and legitimate, so it is only recorded as context.
      *
+     * On a team submission the second half stops being a signal altogether. The
+     * repository belongs to one member and the others commit into it, so an author
+     * who is not the owner is the normal case rather than an oddity, and reporting
+     * it would put a flag on nearly every group. The plugin holds no mapping from a
+     * GitHub account to a Moodle user, so it cannot tell a teammate's commit from a
+     * stranger's — and a signal that fires on everything tells a teacher nothing.
+     *
+     * The strong half survives, and means more than before: a commit authored by the
+     * account that owns *another team's* repository is cross-team authorship.
+     *
+     * @param stdClass $instance The codereview instance row.
      * @param stdClass $submission The submission row.
      * @param stdClass[] $peers The other submissions in the instance.
      * @return stdClass[]
      */
-    protected function check_foreign_author(stdClass $submission, array $peers): array {
+    protected function check_foreign_author(stdClass $instance, stdClass $submission, array $peers): array {
         $author = strtolower(trim((string) $submission->authorlogin));
         if ($author === '') {
             return [];
@@ -242,6 +253,10 @@ class integrity_checker {
                     'authorlogin' => $submission->authorlogin,
                 ])];
             }
+        }
+
+        if (!empty($instance->teamsubmission)) {
+            return [];
         }
 
         if ($author !== strtolower((string) $submission->repoowner)) {

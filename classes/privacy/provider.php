@@ -354,12 +354,7 @@ class provider implements
                 continue;
             }
 
-            self::delete_submissions($DB->get_fieldset_select(
-                'codereview_submissions',
-                'id',
-                'codereview = ? AND userid = ?',
-                [$cm->instance, $userid]
-            ));
+            self::delete_submissions(self::deletable_submissions($cm->instance, [$userid]));
         }
     }
 
@@ -383,15 +378,63 @@ class provider implements
             return;
         }
 
-        [$insql, $params] = $DB->get_in_or_equal($userlist->get_userids(), SQL_PARAMS_NAMED);
-        $params['codereview'] = $cm->instance;
+        self::delete_submissions(self::deletable_submissions($cm->instance, $userlist->get_userids()));
+    }
 
-        self::delete_submissions($DB->get_fieldset_select(
+    /**
+     * Returns the submissions that may be removed on behalf of the given users.
+     *
+     * A team submission is not one student's to erase. It carries the work of
+     * everyone still in the group, and the group's other members did not ask to have
+     * theirs deleted — so a group submission is only removed once nobody is left in
+     * the group. Until then the row stays, and the departing student is disconnected
+     * from it by the submitter field being reassigned to a remaining member.
+     *
+     * @param int $instanceid The codereview instance id.
+     * @param int[] $userids The users whose data is being deleted.
+     * @return int[] Submission ids that can be removed outright.
+     */
+    protected static function deletable_submissions(int $instanceid, array $userids): array {
+        global $DB;
+
+        if (!$userids) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $params['codereview'] = $instanceid;
+
+        $candidates = $DB->get_records_select(
             'codereview_submissions',
-            'id',
             "codereview = :codereview AND userid $insql",
-            $params
-        ));
+            $params,
+            '',
+            'id, userid, groupid'
+        );
+
+        $deletable = [];
+        foreach ($candidates as $submission) {
+            if (empty($submission->groupid)) {
+                $deletable[] = (int) $submission->id;
+                continue;
+            }
+
+            $remaining = array_diff(
+                array_map('intval', array_keys(groups_get_members((int) $submission->groupid, 'u.id'))),
+                array_map('intval', $userids)
+            );
+
+            if (!$remaining) {
+                $deletable[] = (int) $submission->id;
+                continue;
+            }
+
+            // Hand the row to someone who is staying, so it no longer names the
+            // person whose data is being erased.
+            $DB->set_field('codereview_submissions', 'userid', reset($remaining), ['id' => $submission->id]);
+        }
+
+        return $deletable;
     }
 
     /**

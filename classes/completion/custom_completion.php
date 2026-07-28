@@ -39,10 +39,10 @@ class custom_completion extends activity_custom_completion {
 
         $this->validate_rule($rule);
 
-        $submission = $DB->get_record('codereview_submissions', [
-            'codereview' => $this->cm->instance,
-            'userid' => $this->userid,
-        ]);
+        // A team submission completes every member, so the lookup goes through the
+        // group: otherwise only whoever pressed submit would ever be marked complete.
+        $instance = $DB->get_record('codereview', ['id' => $this->cm->instance], '*', MUST_EXIST);
+        $submission = submission_service::find_for_user($instance, (int) $this->userid);
 
         if (!$submission) {
             return COMPLETION_INCOMPLETE;

@@ -109,12 +109,13 @@ class grading_overview_table extends table_sql {
         // them straight on runs the last own column into the first name column.
         $namefields = ltrim(trim($userfields->selects), ',');
 
-        $fields = 's.id, s.userid, s.cistatus, s.aistatus, s.gradestatus, s.islate, s.commitsha,
-                   s.repourl, s.timecreated, g.finalgrade, ' . $namefields;
+        $fields = 's.id, s.userid, s.groupid, s.cistatus, s.aistatus, s.gradestatus, s.islate, s.commitsha,
+                   s.repourl, s.timecreated, g.finalgrade, gr.name AS groupname, ' . $namefields;
 
         $from = '{codereview_submissions} s
                  JOIN {user} u ON u.id = s.userid
-            LEFT JOIN {codereview_grades} g ON g.submission = s.id';
+            LEFT JOIN {codereview_grades} g ON g.submission = s.id
+            LEFT JOIN {groups} gr ON gr.id = s.groupid';
 
         $where = 's.codereview = :codereview';
         $params = ['codereview' => $this->instance->id] + $userfields->params;
@@ -135,7 +136,15 @@ class grading_overview_table extends table_sql {
      * @return string
      */
     public function col_fullname($row): string {
-        $name = fullname($row);
+        // On a team submission the row is the group's, so the group is what names it.
+        // The member who submitted stays visible underneath, because a teacher chasing
+        // a problem needs to know who to ask, not just which team owns the work.
+        if (!empty($row->groupid) && !empty($row->groupname)) {
+            $name = format_string($row->groupname)
+                . html_writer::span(fullname($row), 'd-block small text-body');
+        } else {
+            $name = fullname($row);
+        }
 
         if (!empty($row->islate)) {
             $name .= ' ' . html_writer::span(
