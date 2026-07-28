@@ -212,8 +212,7 @@ class github_client {
             $url .= '?' . http_build_query($params);
         }
 
-        $curl = new curl();
-        $curl->setHeader($this->build_headers());
+        $curl = $this->make_curl();
         $body = $curl->get($url, [], [
             'CURLOPT_TIMEOUT' => 30,
             'CURLOPT_CONNECTTIMEOUT' => 10,
@@ -247,8 +246,7 @@ class github_client {
      * @throws github_exception On any non-200 response.
      */
     protected function request_raw(string $path): string {
-        $curl = new curl();
-        $curl->setHeader($this->build_headers());
+        $curl = $this->make_curl();
         $body = $curl->get(self::BASE . $path, [], [
             'CURLOPT_TIMEOUT' => 120,
             'CURLOPT_CONNECTTIMEOUT' => 10,
@@ -265,6 +263,27 @@ class github_client {
         }
 
         return (string) $body;
+    }
+
+    /**
+     * Returns a configured HTTP client.
+     *
+     * Moodle's curl class lives in a library that is not part of the bootstrap. A web
+     * request almost always has it loaded already by something else, but a scheduled
+     * or adhoc task does not, and every request from this client is made from one.
+     * Requiring it here is what keeps the task from dying on a missing class.
+     *
+     * @return curl
+     */
+    protected function make_curl(): curl {
+        global $CFG;
+
+        require_once($CFG->libdir . '/filelib.php');
+
+        $curl = new curl();
+        $curl->setHeader($this->build_headers());
+
+        return $curl;
     }
 
     /**

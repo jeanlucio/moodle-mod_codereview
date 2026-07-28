@@ -2,9 +2,10 @@
 
 Assess programming work hosted on GitHub, from inside Moodle.
 
-> **Status: alpha, under active development.** The submission core is in place; automated check
-> polling, AI review, authorship verification and the teacher review screen are not implemented
-> yet. Not ready for production use.
+> **Status: alpha, under active development.** The whole flow works end to end: submission, check
+> results, AI review, authorship verification, teacher review and grade approval. Group submission
+> is still being built, and the activity has not yet been through a published release. Not ready
+> for production use.
 
 [Português abaixo](#codereview-mod_codereview-1)
 
@@ -30,6 +31,19 @@ Students submit a **public GitHub repository URL** and a **commit SHA**. The act
   hashes, so it catches clones, forks of a peer's repository and byte-identical files. Renaming
   variables or reordering functions defeats it. **The absence of an alert is not proof of
   originality.**
+
+## Trying it out
+
+A ready-made template repository is available:
+**[moodle-mod_codereview-template](https://github.com/jeanlucio/moodle-mod_codereview-template)**
+
+It is a small Python exercise with one GitHub Actions job per assessed criterion, which is the
+layout this activity expects. One function ships unimplemented on purpose, so a fresh copy has
+three of its four checks passing — what a student's first push actually looks like.
+
+Use it as the activity's **template repository**, and press *Use this template* to stand in for a
+student. Do not fork it: GitHub disables workflows on forks until someone enables them by hand,
+which would leave the activity reporting that no automated check was found.
 
 ## Requirements
 
@@ -70,9 +84,10 @@ GPL v3 or later.
 
 Avaliação de trabalhos de programação hospedados no GitHub, de dentro do Moodle.
 
-> **Estado: alpha, em desenvolvimento ativo.** O núcleo de submissão está pronto; a consulta às
-> checagens automáticas, a revisão por IA, a verificação de autoria e a tela de revisão docente
-> ainda não foram implementadas. Não está pronto para uso em produção.
+> **Estado: alpha, em desenvolvimento ativo.** O fluxo funciona de ponta a ponta: entrega, leitura
+> das checagens, revisão por IA, verificação de autoria, revisão docente e aprovação da nota. A
+> entrega em grupo ainda está sendo construída, e o plugin não passou por nenhuma release
+> publicada. Não está pronto para uso em produção.
 
 ## O que faz
 
@@ -96,6 +111,20 @@ atividade então:
 * **A verificação de autoria detecta apenas duplicata exata.** Compara metadados do Git e hashes de
   conteúdo, então pega clone, fork do repositório de um colega e arquivos byte-idênticos. Renomear
   variáveis ou reordenar funções a derrota. **Ausência de alerta não é prova de originalidade.**
+
+## Para experimentar
+
+Há um repositório-molde pronto:
+**[moodle-mod_codereview-template](https://github.com/jeanlucio/moodle-mod_codereview-template)**
+
+É um exercício pequeno em Python com um job do GitHub Actions por critério avaliado, que é o
+formato que esta atividade espera. Uma das funções vem sem implementação de propósito, então uma
+cópia nova tem três das quatro checagens passando — o que a primeira entrega de um estudante
+realmente produz.
+
+Use-o como **repositório-molde** da atividade, e clique em *Use this template* para simular um
+estudante. Não faça fork: o GitHub desabilita os workflows em forks até alguém habilitar à mão, e a
+atividade acabaria informando que nenhuma checagem automática foi encontrada.
 
 ## Requisitos
 

@@ -53,7 +53,12 @@ class ai_gateway {
      * @return array{success: bool, text: string, provider: string, model: string, error: string}
      */
     public function generate(string $system, string $user, context $context): array {
+        $hubmessage = '';
+
         if (class_exists(\local_aihub\ai::class)) {
+            // The hub answers with an array whose generated text is under "data" and
+            // whose failure reason is under "message". Reading it as an object, or
+            // looking for "text", silently turns every success into a fallback.
             $result = \local_aihub\ai::generate_text(
                 $system,
                 $user,
@@ -62,18 +67,28 @@ class ai_gateway {
                 'Code review suggestion'
             );
 
-            if (!empty($result->success)) {
+            if (!empty($result['success'])) {
                 return [
                     'success' => true,
-                    'text' => (string) ($result->text ?? ''),
-                    'provider' => 'local_aihub',
-                    'model' => (string) ($result->model ?? ''),
+                    'text' => (string) ($result['data'] ?? ''),
+                    'provider' => 'local_aihub/' . (string) ($result['provider'] ?? ''),
+                    'model' => (string) ($result['model'] ?? ''),
                     'error' => '',
                 ];
             }
+
+            $hubmessage = (string) ($result['message'] ?? '');
         }
 
-        return $this->generate_with_core_ai($system, $user, $context);
+        $result = $this->generate_with_core_ai($system, $user, $context);
+
+        // When neither layer answered, the hub's reason is the more specific of the
+        // two and is what the teacher needs to read.
+        if (empty($result['success']) && !empty($hubmessage)) {
+            $result['error'] = $hubmessage;
+        }
+
+        return $result;
     }
 
     /**

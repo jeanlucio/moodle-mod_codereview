@@ -87,7 +87,10 @@ class grading_overview_table extends table_sql {
         $this->no_sorting('suggested');
         $this->no_sorting('actions');
         $this->collapsible(false);
-        $this->set_default_sort_column('fullname', SORT_ASC);
+        // The default has to name a real column: "fullname" is assembled for display
+        // and would reach the database as an ORDER BY on a column that does not exist.
+        // The header still offers its own first-name and last-name sort links.
+        $this->sortable(true, 'lastname', SORT_ASC);
 
         $this->build_sql($groupid);
     }
@@ -101,8 +104,13 @@ class grading_overview_table extends table_sql {
     protected function build_sql(int $groupid): void {
         $userfields = \core_user\fields::for_name()->get_sql('u', false, '', '', false);
 
+        // Whether the name fields arrive with a leading comma depends on how get_sql()
+        // was called, so the separator is normalised rather than assumed: concatenating
+        // them straight on runs the last own column into the first name column.
+        $namefields = ltrim(trim($userfields->selects), ',');
+
         $fields = 's.id, s.userid, s.cistatus, s.aistatus, s.gradestatus, s.islate, s.commitsha,
-                   s.repourl, s.timecreated, g.finalgrade' . $userfields->selects;
+                   s.repourl, s.timecreated, g.finalgrade, ' . $namefields;
 
         $from = '{codereview_submissions} s
                  JOIN {user} u ON u.id = s.userid
