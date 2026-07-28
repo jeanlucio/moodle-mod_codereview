@@ -92,7 +92,7 @@ $renderer = $PAGE->get_renderer('mod_codereview');
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('reviewing', 'mod_codereview', $data['studentname']));
-echo $renderer->render_review_page($data, $cm->id);
+echo $renderer->render_review_page(new \mod_codereview\output\review_page($data, (int) $cm->id));
 
 if ($data['gradestatus'] === submission_service::GRADE_GRADED) {
     echo $OUTPUT->notification(get_string('alreadygradednotice', 'mod_codereview'), \core\output\notification::NOTIFY_INFO);

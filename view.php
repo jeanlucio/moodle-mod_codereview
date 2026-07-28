@@ -120,8 +120,21 @@ if ($notice !== null) {
     echo $OUTPUT->notification($notice, \core\output\notification::NOTIFY_WARNING);
 }
 
+$checkruns = [];
+if ($submission) {
+    $runs = $DB->get_records('codereview_checkruns', ['submission' => $submission->id], 'checkname ASC');
+    $checkruns = array_values(array_map(static fn($run) => [
+        'name' => (string) $run->checkname,
+        'conclusion' => (string) $run->conclusion,
+        'passed' => $run->conclusion === 'success',
+        'detailsurl' => (string) $run->detailsurl,
+    ], $runs));
+}
+
 echo html_writer::start_div('cr-student', ['data-region' => 'codereview-student']);
-echo $renderer->render_student_status($submission, (int) $cm->id);
+echo $renderer->render_student_status(
+    new \mod_codereview\output\student_status($submission ?: null, (int) $cm->id, $checkruns)
+);
 
 if ($form !== null) {
     echo $renderer->render_submit_form($form, $instance, (int) $cm->id, (bool) $submission);
