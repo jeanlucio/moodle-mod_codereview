@@ -298,6 +298,81 @@ function codereview_scale_used_anywhere(int $scaleid): bool {
 }
 
 /**
+ * Declares what a course reset can remove.
+ *
+ * @param stdClass $mform The reset form being built.
+ * @return void
+ */
+function codereview_reset_course_form_definition($mform): void {
+    $mform->addElement('header', 'codereviewheader', get_string('modulenameplural', 'mod_codereview'));
+    $mform->addElement('advcheckbox', 'reset_codereview_submissions', get_string('resetsubmissions', 'mod_codereview'));
+}
+
+/**
+ * Returns the reset options that are ticked by default.
+ *
+ * @param stdClass $course The course being reset.
+ * @return array
+ */
+function codereview_reset_course_form_defaults($course): array {
+    return ['reset_codereview_submissions' => 1];
+}
+
+/**
+ * Removes user data when a course is reset.
+ *
+ * @param stdClass $data The reset settings.
+ * @return array Status rows for the reset report.
+ */
+function codereview_reset_userdata(stdClass $data): array {
+    global $DB;
+
+    $status = [];
+
+    if (empty($data->reset_codereview_submissions)) {
+        return $status;
+    }
+
+    $instances = $DB->get_fieldset_select('codereview', 'id', 'course = ?', [$data->courseid]);
+
+    foreach ($instances as $instanceid) {
+        $submissionids = $DB->get_fieldset_select('codereview_submissions', 'id', 'codereview = ?', [$instanceid]);
+
+        if ($submissionids) {
+            [$insql, $params] = $DB->get_in_or_equal($submissionids);
+            $DB->delete_records_select('codereview_checkruns', "submission $insql", $params);
+            $DB->delete_records_select('codereview_airesults', "submission $insql", $params);
+            $DB->delete_records_select('codereview_grades', "submission $insql", $params);
+            $DB->delete_records_select('codereview_flags', "submission $insql", $params);
+        }
+
+        $DB->delete_records('codereview_commits', ['codereview' => $instanceid]);
+        $DB->delete_records('codereview_submissions', ['codereview' => $instanceid]);
+
+        // The template baseline is a property of the activity rather than of any
+        // student, so it survives a reset that clears the cohort's work.
+        $DB->delete_records_select(
+            'codereview_blobs',
+            'codereview = ? AND submission > 0',
+            [$instanceid]
+        );
+
+        $instance = $DB->get_record('codereview', ['id' => $instanceid]);
+        if ($instance && empty($data->reset_gradebook_grades)) {
+            codereview_grade_item_update($instance, 'reset');
+        }
+    }
+
+    $status[] = [
+        'component' => get_string('modulenameplural', 'mod_codereview'),
+        'item' => get_string('resetsubmissions', 'mod_codereview'),
+        'error' => false,
+    ];
+
+    return $status;
+}
+
+/**
  * Adds a "My GitHub token" entry to the user's own preferences page.
  *
  * Core discovers this callback exclusively through lib.php, which is why it lives
