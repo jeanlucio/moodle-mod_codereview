@@ -43,6 +43,38 @@ class github_client {
     /** @var int|null Remaining requests reported by the last response, null when unknown. */
     protected ?int $ratelimitremaining = null;
 
+    /** @var self|null Stands in for every client while a test is running. */
+    protected static ?self $testinstance = null;
+
+    /**
+     * Returns the client the services should use.
+     *
+     * Every factory goes through here so that a test can replace the client once and
+     * have it apply to the whole flow, including the paths reached from a web service
+     * or a Behat step, where there is no constructor to inject into.
+     *
+     * @param string $token The token to authenticate with.
+     * @return self
+     */
+    public static function instance(string $token): self {
+        return self::$testinstance ?? new self($token);
+    }
+
+    /**
+     * Installs a stand-in client for the duration of a test.
+     *
+     * @param self|null $client The double to use, or null to restore normal behaviour.
+     * @return void
+     * @throws \coding_exception If called outside a test run.
+     */
+    public static function set_instance_for_testing(?self $client): void {
+        if (!defined('PHPUNIT_TEST') && !defined('BEHAT_SITE_RUNNING')) {
+            throw new \coding_exception('set_instance_for_testing() is only available while testing');
+        }
+
+        self::$testinstance = $client;
+    }
+
     /**
      * Constructor.
      *

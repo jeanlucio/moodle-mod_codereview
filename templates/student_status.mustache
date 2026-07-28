@@ -1,0 +1,132 @@
+{{!
+    This file is part of Moodle - https://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+}}
+{{!
+    @template mod_codereview/student_status
+
+    The state of the student's own submission, refreshed while checks are running.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * data-region="codereview-status"
+    * data-action="recheck"
+
+    Context variables required for this template:
+    * cmid int The course module id
+    * hassubmission bool Whether the student has submitted
+    * cistatuslabel string The automated check status in words
+    * checkruns array The recorded check results
+
+    Example context (json):
+    {
+        "cmid": 7,
+        "hassubmission": true,
+        "repourl": "https://github.com/octocat/hello-world",
+        "commitsha": "1234567890abcdef1234567890abcdef12345678",
+        "cistatus": "completed",
+        "cistatuslabel": "Automated checks finished",
+        "aistatuslabel": "AI review finished",
+        "gradestatus": "notgraded",
+        "islate": false,
+        "errormessage": "",
+        "canrecheck": true,
+        "hascheckruns": true,
+        "checkruns": [
+            {"name": "pytest", "conclusion": "success", "passed": true,
+             "detailsurl": "https://github.com/octocat/hello-world/runs/1"}
+        ]
+    }
+}}
+<div class="cr-status" data-region="codereview-status" data-cmid="{{cmid}}" data-cistatus="{{cistatus}}">
+    {{#hassubmission}}
+        <div class="cr-panel">
+            <h3>{{#str}} submissiondetails, mod_codereview {{/str}}</h3>
+
+            <dl class="cr-details">
+                <dt>{{#str}} repourl, mod_codereview {{/str}}</dt>
+                <dd>
+                    <a href="{{repourl}}" rel="noopener" target="_blank"
+                       aria-label="{{#str}} opensinnewtab, mod_codereview {{/str}}">{{repourl}}</a>
+                </dd>
+                <dt>{{#str}} commitsha, mod_codereview {{/str}}</dt>
+                <dd><code>{{commitsha}}</code></dd>
+            </dl>
+
+            {{#islate}}
+                <p class="cr-alert cr-alert-warning">
+                    <i class="fa fa-clock-o" aria-hidden="true"></i>
+                    {{#str}} islate, mod_codereview {{/str}}
+                </p>
+            {{/islate}}
+        </div>
+
+        <div class="cr-panel">
+            <h3>{{#str}} checkruns, mod_codereview {{/str}}</h3>
+
+            <p class="cr-statusline">
+                <span class="badge cr-badge-{{cistatus}}">{{cistatuslabel}}</span>
+            </p>
+
+            {{#errormessage}}
+                <p class="cr-alert cr-alert-warning">
+                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                    {{errormessage}}
+                </p>
+            {{/errormessage}}
+
+            {{#hascheckruns}}
+                <ul class="cr-checklist">
+                    {{#checkruns}}
+                        <li>
+                            {{#passed}}
+                                <i class="fa fa-check" aria-hidden="true"></i>
+                            {{/passed}}
+                            {{^passed}}
+                                <i class="fa fa-times" aria-hidden="true"></i>
+                            {{/passed}}
+                            {{#detailsurl}}
+                                <a href="{{detailsurl}}" rel="noopener" target="_blank"
+                                   aria-label="{{#str}} opensinnewtab, mod_codereview {{/str}}">{{name}}</a>
+                            {{/detailsurl}}
+                            {{^detailsurl}}{{name}}{{/detailsurl}}
+                            <span class="cr-conclusion">{{conclusion}}</span>
+                        </li>
+                    {{/checkruns}}
+                </ul>
+            {{/hascheckruns}}
+
+            {{^hascheckruns}}
+                <p>{{#str}} nocheckruns, mod_codereview {{/str}}</p>
+            {{/hascheckruns}}
+
+            {{#canrecheck}}
+                <button type="button" class="btn btn-secondary btn-sm" data-action="recheck">
+                    {{#str}} recheckci, mod_codereview {{/str}}
+                </button>
+            {{/canrecheck}}
+        </div>
+
+        <div class="cr-panel">
+            <h3>{{#str}} aireview, mod_codereview {{/str}}</h3>
+            <p class="cr-statusline">
+                <span class="badge cr-badge-{{aistatus}}">{{aistatuslabel}}</span>
+            </p>
+            <p>{{#str}} studentgradenotice, mod_codereview {{/str}}</p>
+        </div>
+    {{/hassubmission}}
+</div>

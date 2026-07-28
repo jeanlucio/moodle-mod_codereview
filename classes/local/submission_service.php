@@ -86,7 +86,7 @@ class submission_service {
      * @return self
      */
     public static function for_instance(stdClass $instance): self {
-        return new self(new github_client(github_token::resolve($instance)));
+        return new self(github_client::instance(github_token::resolve($instance)));
     }
 
     /**

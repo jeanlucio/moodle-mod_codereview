@@ -42,7 +42,6 @@ $PAGE->set_title(format_string($instance->name));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
-
 $PAGE->add_body_class('path-mod-codereview');
 
 \mod_codereview\event\course_module_viewed::create([
@@ -53,10 +52,9 @@ $PAGE->add_body_class('path-mod-codereview');
 $completion = new completion_info($course);
 $completion->set_module_viewed($cm);
 
-$cangrade = has_capability('mod/codereview:grade', $context);
-$cansubmit = has_capability('mod/codereview:submit', $context);
+$renderer = $PAGE->get_renderer('mod_codereview');
 
-if ($cangrade) {
+if (has_capability('mod/codereview:grade', $context)) {
     $groupid = groups_get_activity_group($cm, true);
 
     echo $OUTPUT->header();
@@ -70,47 +68,51 @@ if ($cangrade) {
     exit;
 }
 
+require_capability('mod/codereview:submit', $context);
+
 $submission = $DB->get_record('codereview_submissions', [
     'codereview' => $instance->id,
     'userid' => $USER->id,
 ]);
 
+$locked = $submission && $submission->gradestatus === submission_service::GRADE_GRADED;
+$closed = !empty($instance->cutoffdate) && time() > (int) $instance->cutoffdate;
 $notice = null;
 $form = null;
 
-if ($cansubmit) {
-    $locked = $submission && $submission->gradestatus === submission_service::GRADE_GRADED;
-    $closed = !empty($instance->cutoffdate) && time() > (int) $instance->cutoffdate;
+if (!$locked && !$closed) {
+    $form = new mod_codereview_submit_form($PAGE->url, ['instance' => $instance]);
 
-    if (!$locked && !$closed) {
-        $form = new mod_codereview_submit_form($PAGE->url, ['instance' => $instance]);
-
-        if ($data = $form->get_data()) {
-            try {
-                $service = submission_service::for_instance($instance);
-                $submission = $service->submit(
-                    $instance,
-                    $context,
-                    (int) $USER->id,
-                    (string) $data->repourl,
-                    (string) $data->commitsha
-                );
-                redirect($PAGE->url, get_string('submitrepo', 'mod_codereview'), null, \core\output\notification::NOTIFY_SUCCESS);
-            } catch (moodle_exception $e) {
-                $notice = $e->getMessage();
-            }
-        } else if ($submission) {
-            $form->set_data([
-                'repourl' => $submission->repourl,
-                'commitsha' => $submission->commitsha,
-            ]);
+    if ($data = $form->get_data()) {
+        // Reached only without JavaScript: the AMD module posts through the web
+        // service instead. Both paths go through the same service, so the rules hold
+        // either way and the activity still works with scripting switched off.
+        try {
+            $submission = submission_service::for_instance($instance)->submit(
+                $instance,
+                $context,
+                (int) $USER->id,
+                (string) $data->repourl,
+                (string) $data->commitsha
+            );
+            redirect($PAGE->url, get_string('submissionreceived', 'mod_codereview'));
+        } catch (moodle_exception $e) {
+            $notice = $e->getMessage();
         }
-    } else if ($locked) {
-        $notice = get_string('erroralreadygraded', 'mod_codereview');
-    } else {
-        $notice = get_string('errorcutoffpassed', 'mod_codereview');
+    } else if ($submission) {
+        $form->set_data([
+            'repourl' => $submission->repourl,
+            'commitsha' => $submission->commitsha,
+        ]);
     }
+} else if ($locked) {
+    $notice = get_string('erroralreadygraded', 'mod_codereview');
+} else {
+    $notice = get_string('errorcutoffpassed', 'mod_codereview');
 }
+
+$PAGE->requires->js_call_amd('mod_codereview/status_poll', 'init');
+$PAGE->requires->js_call_amd('mod_codereview/submit_form', 'init');
 
 echo $OUTPUT->header();
 
@@ -118,21 +120,12 @@ if ($notice !== null) {
     echo $OUTPUT->notification($notice, \core\output\notification::NOTIFY_WARNING);
 }
 
-if ($submission) {
-    echo html_writer::tag('p', get_string('commitsha', 'mod_codereview') . ': ' . s($submission->commitsha));
-    echo html_writer::tag('p', get_string('repourl', 'mod_codereview') . ': ' .
-        html_writer::link($submission->repourl, s($submission->repourl), ['rel' => 'noopener']));
-    if ($submission->islate) {
-        echo $OUTPUT->notification(get_string('duedate', 'mod_codereview'), \core\output\notification::NOTIFY_WARNING);
-    }
-}
+echo html_writer::start_div('cr-student', ['data-region' => 'codereview-student']);
+echo $renderer->render_student_status($submission, (int) $cm->id);
 
 if ($form !== null) {
-    echo $OUTPUT->notification(get_string('publicrepowarning', 'mod_codereview'), \core\output\notification::NOTIFY_INFO);
-    if (!empty($instance->integritychecks)) {
-        echo $OUTPUT->notification(get_string('authorshipnotice', 'mod_codereview'), \core\output\notification::NOTIFY_INFO);
-    }
-    $form->display();
+    echo $renderer->render_submit_form($form, $instance, (int) $cm->id, (bool) $submission);
 }
 
+echo html_writer::end_div();
 echo $OUTPUT->footer();
