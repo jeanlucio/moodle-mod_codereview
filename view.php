@@ -25,6 +25,7 @@
 require(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/submit_form.php');
 
+use mod_codereview\local\group_resolver;
 use mod_codereview\local\submission_service;
 
 $id = required_param('id', PARAM_INT);
@@ -88,10 +89,16 @@ $submission = submission_service::find_for_user($instance, (int) $USER->id);
 
 $locked = $submission && $submission->gradestatus === submission_service::GRADE_GRADED;
 $closed = !empty($instance->cutoffdate) && time() > (int) $instance->cutoffdate;
+// The service refuses a submission from a student who resolves to no single group,
+// but a refusal at the end of the form is a bad way to learn it. Asking here means
+// the reason is on screen before anything is typed.
+$blocked = (new group_resolver($instance))->blocked_reason((int) $USER->id);
 $notice = null;
 $form = null;
 
-if (!$locked && !$closed) {
+if ($blocked !== '') {
+    $notice = get_string($blocked, 'mod_codereview');
+} else if (!$locked && !$closed) {
     $form = new mod_codereview_submit_form($PAGE->url, ['instance' => $instance]);
 
     if ($data = $form->get_data()) {
