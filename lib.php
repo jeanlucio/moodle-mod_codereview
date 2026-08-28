@@ -215,12 +215,34 @@ function codereview_grade_item_update(stdClass $codereview, $grades = null): int
         $item['gradetype'] = GRADE_TYPE_NONE;
     }
 
-    if ($grades === 'reset') {
+    $isreset = $grades === 'reset';
+    if ($isreset) {
         $item['reset'] = true;
         $grades = null;
     }
 
-    return grade_update('mod/codereview', $codereview->course, 'mod', 'codereview', $codereview->id, 0, $grades, $item);
+    $result = grade_update('mod/codereview', $codereview->course, 'mod', 'codereview', $codereview->id, 0, $grades, $item);
+
+    // The core grade_update() function silently ignores a 'gradepass' key in
+    // $itemdetails: its own internal allow-list (lib/gradelib.php) only lets
+    // itemname/idnumber/gradetype/grademax/grademin/scaleid/multfactor/plusfactor/
+    // deleted/hidden through. The pass grade has to be applied directly on the
+    // grade_item instead, mirroring how mod_workshop does it.
+    if ($result === GRADE_UPDATE_OK && !$isreset && !empty($codereview->gradepass)) {
+        $gradeitem = grade_item::fetch([
+            'itemtype' => 'mod',
+            'itemmodule' => 'codereview',
+            'iteminstance' => $codereview->id,
+            'itemnumber' => 0,
+            'courseid' => $codereview->course,
+        ]);
+        if ($gradeitem && (float)$gradeitem->gradepass !== (float)$codereview->gradepass) {
+            $gradeitem->gradepass = (float)$codereview->gradepass;
+            $gradeitem->update();
+        }
+    }
+
+    return $result;
 }
 
 /**
