@@ -2,10 +2,10 @@
 
 Assess programming work hosted on GitHub, from inside Moodle.
 
-> **Status: alpha, under active development.** The whole flow works end to end: submission, check
-> results, AI review, authorship verification, teacher review and grade approval. Group submission
-> is still being built, and the activity has not yet been through a published release. Not ready
-> for production use.
+> **Status: alpha, under active development.** The whole flow works end to end: individual and
+> group submission, check results, AI review, authorship verification, teacher review and grade
+> approval. The activity has not yet been through a published release. Not ready for production
+> use.
 
 [Português abaixo](#codereview-mod_codereview-1)
 
@@ -84,10 +84,10 @@ GPL v3 or later.
 
 Avaliação de trabalhos de programação hospedados no GitHub, de dentro do Moodle.
 
-> **Estado: alpha, em desenvolvimento ativo.** O fluxo funciona de ponta a ponta: entrega, leitura
-> das checagens, revisão por IA, verificação de autoria, revisão docente e aprovação da nota. A
-> entrega em grupo ainda está sendo construída, e o plugin não passou por nenhuma release
-> publicada. Não está pronto para uso em produção.
+> **Estado: alpha, em desenvolvimento ativo.** O fluxo funciona de ponta a ponta: entrega
+> individual e em grupo, leitura das checagens, revisão por IA, verificação de autoria, revisão
+> docente e aprovação da nota. O plugin ainda não passou por nenhuma release publicada. Não está
+> pronto para uso em produção.
 
 ## O que faz
 
