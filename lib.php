@@ -263,7 +263,7 @@ function codereview_get_user_grades(stdClass $codereview, int $userid = 0): arra
     // whoever submitted it, and filtering on s.userid would miss it.
     $sql = "SELECT s.id AS submissionid, s.userid AS userid, s.groupid AS groupid,
                    g.finalgrade AS rawgrade, g.timemodified AS dategraded,
-                   g.graderid AS usermodified, g.timecreated AS datesubmitted
+                   g.graderid AS usermodified, s.timesubmitted AS datesubmitted
               FROM {codereview_submissions} s
               JOIN {codereview_grades} g ON g.submission = s.id
              WHERE s.codereview = :codereview AND g.finalgrade IS NOT NULL";

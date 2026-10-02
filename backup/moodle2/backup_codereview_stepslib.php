@@ -55,7 +55,7 @@ class backup_codereview_activity_structure_step extends backup_activity_structur
             'userid', 'groupid', 'repourl', 'repoowner', 'reponame', 'commitsha',
             'commitauthordate', 'repocreatedat', 'repopushedat', 'isfork', 'forkparent',
             'authorlogin', 'cistatus', 'aistatus', 'gradestatus', 'islate', 'truncated',
-            'errormessage', 'timecreated', 'timemodified',
+            'errormessage', 'timesubmitted', 'timecreated', 'timemodified',
         ]);
 
         $checkruns = new backup_nested_element('checkruns');

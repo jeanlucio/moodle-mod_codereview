@@ -78,6 +78,7 @@ final class checkrun_poller_test extends advanced_testcase {
         $submission->cistatus = submission_service::CI_PENDING;
         $submission->aistatus = submission_service::AI_SKIPPED;
         $submission->gradestatus = submission_service::GRADE_NOTGRADED;
+        $submission->timesubmitted = time();
         $submission->timecreated = time();
         $submission->timemodified = time();
         $submission->id = $DB->insert_record('codereview_submissions', $submission);
@@ -233,7 +234,8 @@ final class checkrun_poller_test extends advanced_testcase {
     public function test_no_runs_after_timeout_reports_no_ci(): void {
         global $DB;
 
-        $this->submission->timecreated = time() - (($this->instance->citimeout + 1) * MINSECS);
+        $this->submission->timesubmitted = time() - (($this->instance->citimeout + 1) * MINSECS);
+        $this->submission->timecreated = $this->submission->timesubmitted;
         $DB->update_record('codereview_submissions', $this->submission);
 
         $this->assertSame(submission_service::CI_NOCIDETECTED, $this->poll_with([]));
@@ -248,7 +250,8 @@ final class checkrun_poller_test extends advanced_testcase {
     public function test_partial_runs_after_timeout_complete(): void {
         global $DB;
 
-        $this->submission->timecreated = time() - (($this->instance->citimeout + 1) * MINSECS);
+        $this->submission->timesubmitted = time() - (($this->instance->citimeout + 1) * MINSECS);
+        $this->submission->timecreated = $this->submission->timesubmitted;
         $DB->update_record('codereview_submissions', $this->submission);
 
         $status = $this->poll_with([
@@ -299,5 +302,22 @@ final class checkrun_poller_test extends advanced_testcase {
         $this->assertNotEmpty($DB->get_field('codereview_submissions', 'errormessage', [
             'id' => $this->submission->id,
         ]));
+    }
+
+    /**
+     * The polling window counts from the latest submission. A resubmission made long
+     * after the first one must wait for its own checks instead of being reported as
+     * having no CI on the very first poll.
+     *
+     * @return void
+     */
+    public function test_resubmission_waits_from_latest_submission(): void {
+        global $DB;
+
+        $this->submission->timecreated = time() - 2 * DAYSECS;
+        $this->submission->timesubmitted = time();
+        $DB->update_record('codereview_submissions', $this->submission);
+
+        $this->assertSame(submission_service::CI_CHECKING, $this->poll_with([]));
     }
 }

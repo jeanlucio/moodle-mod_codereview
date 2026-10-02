@@ -291,6 +291,46 @@ final class submission_service_test extends advanced_testcase {
     }
 
     /**
+     * A resubmission is a new submission in time: timesubmitted moves to it, while
+     * timecreated keeps recording when the student first submitted.
+     *
+     * @return void
+     */
+    public function test_resubmission_refreshes_submission_time_only(): void {
+        global $DB;
+
+        $service = new submission_service($this->stub_with_public_repo());
+        $first = $service->submit(
+            $this->instance,
+            $this->context,
+            (int) $this->student->id,
+            'https://github.com/octocat/hello-world',
+            self::SHA
+        );
+        $this->assertSame((int) $first->timecreated, (int) $first->timesubmitted);
+
+        $twodaysago = time() - 2 * DAYSECS;
+        $DB->set_field('codereview_submissions', 'timecreated', $twodaysago, ['id' => $first->id]);
+        $DB->set_field('codereview_submissions', 'timesubmitted', $twodaysago, ['id' => $first->id]);
+
+        $newsha = str_repeat('f', 40);
+        $stub = new github_client_stub();
+        $stub->stub_public_repo('octocat', 'hello-world', $newsha);
+        $before = time();
+        (new submission_service($stub))->submit(
+            $this->instance,
+            $this->context,
+            (int) $this->student->id,
+            'https://github.com/octocat/hello-world',
+            $newsha
+        );
+
+        $stored = $DB->get_record('codereview_submissions', ['id' => $first->id], '*', MUST_EXIST);
+        $this->assertSame($twodaysago, (int) $stored->timecreated);
+        $this->assertGreaterThanOrEqual($before, (int) $stored->timesubmitted);
+    }
+
+    /**
      * Once the teacher has approved a grade the student cannot silently replace the
      * work that was assessed.
      *

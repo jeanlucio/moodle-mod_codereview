@@ -287,6 +287,9 @@ class submission_service {
         $record->islate = (!empty($instance->duedate) && $now > (int) $instance->duedate) ? 1 : 0;
         $record->truncated = 0;
         $record->errormessage = null;
+        // A resubmission keeps the original timecreated (see submit()), so the CI
+        // polling window and the gradebook submission date both read this instead.
+        $record->timesubmitted = $now;
         $record->timecreated = $now;
         $record->timemodified = $now;
 

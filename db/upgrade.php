@@ -114,5 +114,28 @@ function xmldb_codereview_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026072805, 'codereview');
     }
 
+    if ($oldversion < 2026100200) {
+        $submissions = new xmldb_table('codereview_submissions');
+        $timesubmitted = new xmldb_field(
+            'timesubmitted',
+            XMLDB_TYPE_INTEGER,
+            '10',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '0',
+            'errormessage'
+        );
+        if (!$dbman->field_exists($submissions, $timesubmitted)) {
+            $dbman->add_field($submissions, $timesubmitted);
+        }
+
+        // The time of a past resubmission was never stored, so the first submission
+        // time is the closest value available for rows that already exist.
+        $DB->execute('UPDATE {codereview_submissions} SET timesubmitted = timecreated WHERE timesubmitted = 0');
+
+        upgrade_mod_savepoint(true, 2026100200, 'codereview');
+    }
+
     return true;
 }

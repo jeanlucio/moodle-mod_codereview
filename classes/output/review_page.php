@@ -79,7 +79,7 @@ class review_page implements renderable, templatable {
         $context['commitdateformatted'] = !empty($data['commitauthordate'])
             ? userdate($data['commitauthordate'])
             : '';
-        $context['submitteddateformatted'] = userdate($data['timecreated']);
+        $context['submitteddateformatted'] = userdate($data['timesubmitted']);
 
         $context['cistatuslabel'] = get_string('ci' . $data['cistatus'], 'mod_codereview');
         $context['aistatuslabel'] = get_string('ai' . $data['aistatus'], 'mod_codereview');

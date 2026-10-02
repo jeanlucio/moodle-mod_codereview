@@ -55,7 +55,7 @@ class reconcile_submissions extends scheduled_task {
                   FROM {codereview_submissions} s
                   JOIN {codereview} c ON c.id = s.codereview
                  WHERE s.cistatus IN (:pending, :checking)
-                       AND s.timecreated + (c.citimeout * 60) < :now";
+                       AND s.timesubmitted + (c.citimeout * 60) < :now";
 
         $stuck = $DB->get_records_sql($sql, [
             'pending' => submission_service::CI_PENDING,

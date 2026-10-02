@@ -80,6 +80,7 @@ final class grade_approval_service_test extends advanced_testcase {
             'cistatus' => submission_service::CI_COMPLETED,
             'aistatus' => submission_service::AI_SKIPPED,
             'gradestatus' => submission_service::GRADE_NOTGRADED,
+            'timesubmitted' => time(),
             'timecreated' => time(),
             'timemodified' => time(),
         ];
@@ -285,5 +286,63 @@ final class grade_approval_service_test extends advanced_testcase {
         $this->expectException(\dml_exception::class);
 
         review_service::get_submission($otherinstance, (int) $this->submission->id);
+    }
+
+    /**
+     * Marks the submission as a resubmission: first submitted five days ago, last
+     * submitted three days ago. Returns the latest submission time.
+     *
+     * @return int
+     */
+    private function resubmitted_three_days_ago(): int {
+        global $DB;
+
+        $this->submission->timecreated = time() - 5 * DAYSECS;
+        $this->submission->timesubmitted = time() - 3 * DAYSECS;
+        $DB->update_record('codereview_submissions', $this->submission);
+
+        return (int) $this->submission->timesubmitted;
+    }
+
+    /**
+     * The grade carries when the work was submitted, not when it was approved: a teacher
+     * grading after the due date must not make an on-time submission look late to
+     * gradebook consumers such as late-penalty plugins.
+     *
+     * @return void
+     */
+    public function test_grade_reports_latest_submission_time(): void {
+        $submitted = $this->resubmitted_three_days_ago();
+
+        (new grade_approval_service())->approve(
+            $this->instance,
+            $this->context,
+            $this->submission,
+            (int) $this->teacher->id,
+            77.0,
+            ''
+        );
+
+        $grades = grade_get_grades(
+            $this->instance->course,
+            'mod',
+            'codereview',
+            $this->instance->id,
+            [$this->student->id]
+        );
+        $this->assertEquals($submitted, $grades->items[0]->grades[$this->student->id]->datesubmitted);
+    }
+
+    /**
+     * The review page shows the latest submission time, not the first one.
+     *
+     * @return void
+     */
+    public function test_review_data_shows_latest_submission_time(): void {
+        $submitted = $this->resubmitted_three_days_ago();
+
+        $data = review_service::get_review_data($this->instance, $this->submission);
+
+        $this->assertSame($submitted, $data['timesubmitted']);
     }
 }

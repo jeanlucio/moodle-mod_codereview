@@ -182,7 +182,7 @@ class checkrun_poller {
     public function has_timed_out(stdClass $instance, stdClass $submission): bool {
         $window = max(1, (int) $instance->citimeout) * MINSECS;
 
-        return time() > ((int) $submission->timecreated + $window);
+        return time() > ((int) $submission->timesubmitted + $window);
     }
 
     /**

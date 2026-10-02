@@ -90,7 +90,7 @@ class get_review_data extends external_api {
             'commitsha' => new external_value(PARAM_ALPHANUM, 'Submitted commit'),
             'authorlogin' => new external_value(PARAM_TEXT, 'GitHub account that authored the commit'),
             'commitauthordate' => new external_value(PARAM_INT, 'Commit date declared by the author'),
-            'timecreated' => new external_value(PARAM_INT, 'When it was submitted in Moodle'),
+            'timesubmitted' => new external_value(PARAM_INT, 'When it was last submitted in Moodle'),
             'islate' => new external_value(PARAM_BOOL, 'Whether it is past the due date'),
             'truncated' => new external_value(PARAM_BOOL, 'Whether the reviewed code was cut by the size budget'),
             'cistatus' => new external_value(PARAM_ALPHA, 'Automated check status'),

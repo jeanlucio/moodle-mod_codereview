@@ -137,7 +137,7 @@ class poll_check_runs extends adhoc_task {
      * @return int Seconds.
      */
     protected function next_delay(\stdClass $submission): int {
-        $waiting = time() - (int) $submission->timecreated;
+        $waiting = time() - (int) $submission->timesubmitted;
 
         if ($waiting < 2 * MINSECS) {
             return 30;

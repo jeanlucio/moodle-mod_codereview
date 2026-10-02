@@ -69,7 +69,7 @@ class review_service {
             'commitsha' => (string) $submission->commitsha,
             'authorlogin' => (string) $submission->authorlogin,
             'commitauthordate' => (int) $submission->commitauthordate,
-            'timecreated' => (int) $submission->timecreated,
+            'timesubmitted' => (int) $submission->timesubmitted,
             'islate' => (bool) $submission->islate,
             'truncated' => (bool) $submission->truncated,
             'cistatus' => (string) $submission->cistatus,

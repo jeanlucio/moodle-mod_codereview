@@ -51,6 +51,7 @@ class provider implements
             'commitsha' => 'privacy:metadata:codereview_submissions:commitsha',
             'authorlogin' => 'privacy:metadata:codereview_submissions:authorlogin',
             'timecreated' => 'privacy:metadata:codereview_submissions:timecreated',
+            'timesubmitted' => 'privacy:metadata:codereview_submissions:timesubmitted',
         ], 'privacy:metadata:codereview_submissions');
 
         $collection->add_database_table('codereview_checkruns', [
@@ -194,6 +195,7 @@ class provider implements
                 'aistatus' => $submission->aistatus,
                 'gradestatus' => $submission->gradestatus,
                 'timecreated' => transform::datetime($submission->timecreated),
+                'timesubmitted' => transform::datetime($submission->timesubmitted),
                 'checkruns' => self::export_checkruns((int) $submission->id),
                 'airesults' => self::export_airesults((int) $submission->id),
                 'grade' => self::export_grade((int) $submission->id),
