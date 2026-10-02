@@ -27,9 +27,9 @@ use mod_codereview\local\submission_service;
  *
  * The task carries nothing but the submission id. Backoff is derived from how long
  * the submission has been waiting rather than from an attempt counter, which keeps
- * the custom data identical across reschedules so that
- * {@see manager::queue_adhoc_task()} can deduplicate them: a student hammering
- * "check again" cannot stack up parallel pollers against the GitHub quota.
+ * the custom data identical across reschedules so that a waiting poll can be
+ * recognised and reused: a student hammering "check again" cannot stack up parallel
+ * pollers against the GitHub quota.
  *
  * @package    mod_codereview
  * @copyright  2026 Jean Lúcio
@@ -44,6 +44,17 @@ class poll_check_runs extends adhoc_task {
      * @return void
      */
     public static function queue(int $submissionid, int $delay = 0): void {
+        manager::queue_adhoc_task(self::create($submissionid, $delay), true);
+    }
+
+    /**
+     * Builds the poll task for a submission.
+     *
+     * @param int $submissionid The submission to poll for.
+     * @param int $delay Seconds to wait before the attempt.
+     * @return self
+     */
+    protected static function create(int $submissionid, int $delay): self {
         $task = new self();
         $task->set_custom_data((object) ['submissionid' => $submissionid]);
         $task->set_component('mod_codereview');
@@ -52,7 +63,37 @@ class poll_check_runs extends adhoc_task {
             $task->set_next_run_time(time() + $delay);
         }
 
-        manager::queue_adhoc_task($task, true);
+        return $task;
+    }
+
+    /**
+     * Queues the next poll of the same submission from inside a running poll.
+     *
+     * queue() would never do here: core keeps this task's own row in task_adhoc until
+     * execute() returns, so its duplicate check always found this very task and dropped
+     * the next poll, leaving the submission waiting for the hourly reconcile task. Only a
+     * poll other than this one still waiting makes the next one redundant.
+     *
+     * @param int $submissionid The submission to poll for.
+     * @param int $delay Seconds to wait before the next attempt.
+     * @return void
+     */
+    protected function queue_next_poll(int $submissionid, int $delay): void {
+        global $DB;
+
+        $next = self::create($submissionid, $delay);
+        $record = manager::record_from_adhoc_task($next);
+        $select = 'classname = :classname AND id <> :id AND ' .
+            $DB->sql_compare_text('customdata', \core_text::strlen($record->customdata) + 1) . ' = :customdata';
+        $params = [
+            'classname' => $record->classname,
+            'id' => (int) $this->get_id(),
+            'customdata' => $record->customdata,
+        ];
+
+        if (!$DB->record_exists_select('task_adhoc', $select, $params)) {
+            manager::queue_adhoc_task($next);
+        }
     }
 
     /**
@@ -82,7 +123,7 @@ class poll_check_runs extends adhoc_task {
         $status = $poller->poll($instance, $submission);
 
         if ($status === submission_service::CI_CHECKING || $status === submission_service::CI_PENDING) {
-            self::queue($submissionid, $this->next_delay($submission));
+            $this->queue_next_poll($submissionid, $this->next_delay($submission));
 
             return;
         }
