@@ -164,6 +164,11 @@ class grade_approval_service {
      * @return void
      */
     protected function update_completion(stdClass $instance, context_module $context, int $userid): void {
+        global $CFG;
+
+        // Not loaded outside a page request that already needed it (web service, cron).
+        require_once($CFG->libdir . '/completionlib.php');
+
         $cm = get_coursemodule_from_instance('codereview', $instance->id, 0, false, IGNORE_MISSING);
         if (!$cm) {
             return;

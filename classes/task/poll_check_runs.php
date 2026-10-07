@@ -155,6 +155,12 @@ class poll_check_runs extends adhoc_task {
      * @return void
      */
     protected function update_completion(\stdClass $instance, \stdClass $submission): void {
+        global $CFG;
+
+        // Cron does not load the completion library on its own, and PHPUnit always does,
+        // so the suite cannot catch this: without it the task dies and never queues the review.
+        require_once($CFG->libdir . '/completionlib.php');
+
         $cm = get_coursemodule_from_instance('codereview', $instance->id, 0, false, IGNORE_MISSING);
         if (!$cm) {
             return;
