@@ -18,7 +18,8 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16
+        # Moodle 5.3 requires PostgreSQL 17; the older branches keep 16.
+        image: postgres:${{ matrix.pg || '16' }}
         env:
           POSTGRES_USER: 'postgres'
           POSTGRES_HOST_AUTH_METHOD: 'trust'
@@ -27,7 +28,8 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
 
       mariadb:
-        image: mariadb:10.11
+        # Moodle 5.3 requires MariaDB 11.4; the older branches keep 10.11.
+        image: mariadb:${{ matrix.maria || '10.11' }}
         env:
           MYSQL_USER: 'root'
           MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
@@ -41,7 +43,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'pgsql', runchecks: 'all'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.3', database: 'pgsql', pg: '17', runchecks: 'all'}
+          - {moodle-branch: 'MOODLE_503_STABLE', php: '8.4', database: 'mariadb', maria: '11.4'}
+          - {moodle-branch: 'MOODLE_502_STABLE', php: '8.3', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_502_STABLE', php: '8.4', database: 'mariadb'}
           - {moodle-branch: 'MOODLE_501_STABLE', php: '8.3', database: 'pgsql'}
           - {moodle-branch: 'MOODLE_501_STABLE', php: '8.2', database: 'mariadb'}

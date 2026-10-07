@@ -27,6 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 $plugin->component = 'mod_codereview';
 $plugin->version   = 2026100200;
 $plugin->requires  = 2024100700;
-$plugin->supported = [405, 502];
+$plugin->supported = [405, 503];
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->release   = 'v1.0.0-dev';

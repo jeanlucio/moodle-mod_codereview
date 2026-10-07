@@ -47,7 +47,7 @@ which would leave the activity reporting that no automated check was found.
 
 ## Requirements
 
-* Moodle 4.5 or later (tested against 4.5, 5.0, 5.1 and 5.2)
+* Moodle 4.5 or later (tested against 4.5, 5.0, 5.1, 5.2 and 5.3)
 * PHP 8.1 or later
 * A GitHub repository per student, **public**, with a GitHub Actions workflow
 
@@ -128,7 +128,7 @@ atividade acabaria informando que nenhuma checagem automática foi encontrada.
 
 ## Requisitos
 
-* Moodle 4.5 ou superior (testado em 4.5, 5.0, 5.1 e 5.2)
+* Moodle 4.5 ou superior (testado em 4.5, 5.0, 5.1, 5.2 e 5.3)
 * PHP 8.1 ou superior
 * Um repositório GitHub por estudante, **público**, com um workflow do GitHub Actions
 
