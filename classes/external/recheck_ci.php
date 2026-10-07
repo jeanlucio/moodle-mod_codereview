@@ -23,19 +23,16 @@ use core_external\external_single_structure;
 use core_external\external_value;
 use mod_codereview\local\manual_runner;
 use mod_codereview\local\submission_service;
-use mod_codereview\task\poll_check_runs;
 use moodle_exception;
 
 /**
- * Web service that asks for the automated checks to be read again.
+ * Web service that reads the automated checks of a submission again, right away.
  *
  * This is the escape hatch for every way polling can end without an answer: a
  * workflow that finished after the timeout, a rate limit hit mid-window, GitHub
- * being briefly unreachable.
- *
- * A grader's request runs right away and reports the outcome, because the person who
- * pressed the button is watching and has to read any failure. A student's request is
- * only queued, so that it cannot hold a page open or spend the GitHub quota in a loop.
+ * being briefly unreachable. It is for graders only. It runs inside the request and
+ * reports the outcome, because the person who pressed the button is watching and has
+ * to read any failure; a student never sees the checks, so has nothing to recheck.
  *
  * @package    mod_codereview
  * @copyright  2026 Jean Lúcio
@@ -50,19 +47,19 @@ class recheck_ci extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id of the activity'),
-            'userid' => new external_value(PARAM_INT, 'Whose submission to recheck, 0 for the caller', VALUE_DEFAULT, 0),
+            'userid' => new external_value(PARAM_INT, 'Whose submission to recheck'),
         ]);
     }
 
     /**
-     * Reads the checks again: now for a grader, through the queue for a student.
+     * Reads the checks again and reports how it ended.
      *
      * @param int $cmid Course module id of the activity.
-     * @param int $userid Whose submission to recheck, 0 for the caller.
+     * @param int $userid Whose submission to recheck.
      * @return array The submission status and, when the run failed, why.
      */
-    public static function execute(int $cmid, int $userid = 0): array {
-        global $DB, $USER;
+    public static function execute(int $cmid, int $userid): array {
+        global $DB;
 
         [
             'cmid' => $cmid,
@@ -73,45 +70,19 @@ class recheck_ci extends external_api {
         $context = context_module::instance($cm->id);
         self::validate_context($context);
         require_sesskey();
-
-        $targetid = $userid > 0 ? $userid : (int) $USER->id;
-
-        // Rechecking someone else's submission is a grader action; rechecking your own
-        // only needs the submit capability.
-        $graderrun = $targetid !== (int) $USER->id;
-        if ($graderrun) {
-            require_capability('mod/codereview:grade', $context);
-        } else {
-            require_capability('mod/codereview:submit', $context);
-        }
+        require_capability('mod/codereview:grade', $context);
 
         $instance = $DB->get_record('codereview', ['id' => $cm->instance], '*', MUST_EXIST);
-        $submission = submission_service::find_for_user($instance, $targetid);
+        $submission = submission_service::find_for_user($instance, $userid);
 
         if (!$submission) {
             throw new moodle_exception('errornosubmission', 'mod_codereview');
         }
 
-        if ($graderrun) {
-            $status = manual_runner::recheck_ci($instance, $submission);
-            $error = (string) $DB->get_field('codereview_submissions', 'errormessage', ['id' => $submission->id]);
+        $status = manual_runner::recheck_ci($instance, $submission);
+        $error = (string) $DB->get_field('codereview_submissions', 'errormessage', ['id' => $submission->id]);
 
-            return ['cistatus' => $status, 'error' => $error];
-        }
-
-        if ($submission->cistatus === submission_service::CI_PENDING) {
-            throw new moodle_exception('errorrecheckpending', 'mod_codereview');
-        }
-
-        $DB->set_field('codereview_submissions', 'cistatus', submission_service::CI_CHECKING, [
-            'id' => $submission->id,
-        ]);
-
-        // Reusing any poll already queued for this submission is what keeps a repeated
-        // click from stacking parallel pollers against the site's GitHub quota.
-        poll_check_runs::queue((int) $submission->id);
-
-        return ['cistatus' => submission_service::CI_CHECKING, 'error' => ''];
+        return ['cistatus' => $status, 'error' => $error];
     }
 
     /**
@@ -121,7 +92,7 @@ class recheck_ci extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'cistatus' => new external_value(PARAM_ALPHA, 'Automated check status after the request'),
+            'cistatus' => new external_value(PARAM_ALPHA, 'Automated check status after the run'),
             'error' => new external_value(PARAM_TEXT, 'Why the run failed, empty when it did not'),
         ]);
     }

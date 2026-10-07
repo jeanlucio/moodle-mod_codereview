@@ -287,30 +287,48 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
-     * The student status template renders for a submission.
+     * The student sees where the work was sent and when, and nothing of what the checks or
+     * the AI made of it: that is for the teacher to read.
      *
      * @return void
      */
-    public function test_student_status_renders(): void {
+    public function test_student_status_shows_the_delivery_and_nothing_of_the_results(): void {
         global $PAGE;
 
         $PAGE->set_context(context_module::instance($this->cm->cmid));
         $renderer = $PAGE->get_renderer('mod_codereview');
 
-        $checkruns = [[
-            'name' => 'pytest',
-            'conclusion' => 'success',
-            'passed' => true,
-            'detailsurl' => 'https://github.com/octocat/hello-world/runs/1',
-        ]];
+        $html = $renderer->render_student_status(new student_status($this->submission, (int) $this->cm->cmid));
 
-        $html = $renderer->render_student_status(
-            new student_status($this->submission, (int) $this->cm->cmid, $checkruns)
-        );
-
-        $this->assertStringContainsString('pytest', $html);
+        $this->assertStringContainsString($this->submission->repourl, $html);
         $this->assertStringContainsString($this->submission->commitsha, $html);
+        $this->assertStringContainsString(get_string('islate', 'mod_codereview'), $html);
+        $this->assertStringContainsString(get_string('studentgradenotice', 'mod_codereview'), $html);
+        $this->assertStringNotContainsString('pytest', $html);
+        $this->assertStringNotContainsString(get_string('cicompleted', 'mod_codereview'), $html);
+        $this->assertStringNotContainsString(get_string('aicompleted', 'mod_codereview'), $html);
+        $this->assertStringNotContainsString('Clear structure.', $html);
         $this->assertStringNotContainsString('[[', $html);
+    }
+
+    /**
+     * Once the grade is approved the "your grade comes after review" notice is gone.
+     *
+     * @return void
+     */
+    public function test_student_status_drops_the_notice_once_graded(): void {
+        global $DB, $PAGE;
+
+        $DB->set_field('codereview_submissions', 'gradestatus', submission_service::GRADE_GRADED, [
+            'id' => $this->submission->id,
+        ]);
+        $graded = $DB->get_record('codereview_submissions', ['id' => $this->submission->id], '*', MUST_EXIST);
+
+        $PAGE->set_context(context_module::instance($this->cm->cmid));
+        $html = $PAGE->get_renderer('mod_codereview')
+            ->render_student_status(new student_status($graded, (int) $this->cm->cmid));
+
+        $this->assertStringNotContainsString(get_string('studentgradenotice', 'mod_codereview'), $html);
     }
 
     /**

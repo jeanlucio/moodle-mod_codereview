@@ -33,20 +33,12 @@ $functions = [
         'capabilities' => 'mod/codereview:submit',
         'services'    => [],
     ],
-    'mod_codereview_get_submission_status' => [
-        'classname'   => 'mod_codereview\external\get_submission_status',
-        'description' => 'Returns the status and check-run results of the caller\'s own submission.',
-        'type'        => 'read',
-        'ajax'        => true,
-        'capabilities' => 'mod/codereview:submit',
-        'services'    => [],
-    ],
     'mod_codereview_recheck_ci' => [
         'classname'   => 'mod_codereview\external\recheck_ci',
-        'description' => 'Queues a fresh read of the automated check results for a submission.',
+        'description' => 'Reads the automated check results of a submission again, right away.',
         'type'        => 'write',
         'ajax'        => true,
-        'capabilities' => 'mod/codereview:submit',
+        'capabilities' => 'mod/codereview:grade',
         'services'    => [],
     ],
     'mod_codereview_get_review_data' => [

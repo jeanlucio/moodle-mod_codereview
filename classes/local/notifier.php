@@ -31,10 +31,11 @@ use stdClass;
  */
 class notifier {
     /**
-     * Tells the student and the graders that no automated check ever appeared.
+     * Tells the graders that no automated check ever appeared.
      *
-     * A submission that simply sat at "waiting" forever would leave both sides
-     * guessing, so the timeout is reported rather than silently absorbed.
+     * A submission that simply sat at "waiting" forever would leave the teacher guessing, so
+     * the timeout is reported rather than silently absorbed. The student is not told: what the
+     * checks found is the teacher's to read, and the screen they see no longer shows it.
      *
      * @param stdClass $instance The codereview instance row.
      * @param stdClass $submission The submission that timed out.
@@ -50,7 +51,7 @@ class notifier {
         $url = new moodle_url('/mod/codereview/view.php', ['id' => $cm->id]);
         $activityname = format_string($instance->name);
 
-        $recipients = [(int) $submission->userid];
+        $recipients = [];
         foreach (get_users_by_capability($context, 'mod/codereview:grade', 'u.id') as $grader) {
             $recipients[] = (int) $grader->id;
         }

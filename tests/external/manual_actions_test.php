@@ -191,24 +191,22 @@ final class manual_actions_test extends externallib_advanced_testcase {
     }
 
     /**
-     * A student's own recheck is queued rather than run, so it cannot hold a request open
-     * or spend the GitHub quota in a loop.
+     * A student has nothing to recheck: the checks are not shown to them, and a click would
+     * only spend the GitHub quota.
      *
      * @return void
      */
-    public function test_student_recheck_is_only_queued(): void {
+    public function test_a_student_cannot_recheck_even_their_own_submission(): void {
         global $DB;
 
-        $DB->set_field('codereview_submissions', 'cistatus', submission_service::CI_COMPLETED, [
-            'id' => $this->submissionid,
-        ]);
         $this->login_as($this->student);
 
-        $result = recheck_ci::execute((int) $this->cm->cmid);
-
-        $this->assertSame(submission_service::CI_CHECKING, $result['cistatus']);
-        $this->assertCount(1, \core\task\manager::get_adhoc_tasks(\mod_codereview\task\poll_check_runs::class));
-        $this->assertSame(0, $DB->count_records('codereview_checkruns'));
+        try {
+            recheck_ci::execute((int) $this->cm->cmid, (int) $this->student->id);
+            $this->fail('A student must not be able to recheck the automated checks.');
+        } catch (required_capability_exception $e) {
+            $this->assertSame(0, $DB->count_records('codereview_checkruns'));
+        }
     }
 
     /**
