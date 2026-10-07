@@ -45,7 +45,7 @@ class backup_codereview_activity_structure_step extends backup_activity_structur
         $codereview = new backup_nested_element('codereview', ['id'], [
             'name', 'intro', 'introformat', 'grade', 'weighttests', 'weightai',
             'citimeout', 'rubric', 'rubricformat', 'templaterepourl', 'integritychecks',
-            'duedate', 'cutoffdate', 'completionsubmit', 'completionchecks',
+            'duedate', 'cutoffdate', 'completionsubmit',
             'tokenuserid', 'teamsubmission', 'teamsubmissiongroupingid',
             'timecreated', 'timemodified',
         ]);

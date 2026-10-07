@@ -193,20 +193,7 @@ class mod_codereview_mod_form extends moodleform_mod {
             get_string('completionsubmit', 'mod_codereview')
         );
 
-        $group = [
-            $mform->createElement(
-                'advcheckbox',
-                'completionchecksenabled',
-                '',
-                get_string('completionchecks', 'mod_codereview')
-            ),
-            $mform->createElement('text', 'completionchecks', '', ['size' => 3]),
-        ];
-        $mform->setType('completionchecks', PARAM_INT);
-        $mform->addGroup($group, 'completionchecksgroup', '', ' ', false);
-        $mform->hideIf('completionchecks', 'completionchecksenabled', 'notchecked');
-
-        return ['completionsubmit', 'completionchecksgroup'];
+        return ['completionsubmit'];
     }
 
     /**
@@ -216,25 +203,7 @@ class mod_codereview_mod_form extends moodleform_mod {
      * @return bool
      */
     public function completion_rule_enabled($data): bool {
-        $checks = !empty($data['completionchecksenabled']) && (int) ($data['completionchecks'] ?? 0) > 0;
-
-        return !empty($data['completionsubmit']) || $checks;
-    }
-
-    /**
-     * Derives the checkbox state from the stored value before the form is shown.
-     *
-     * @param array $defaultvalues The values about to be loaded, modified in place.
-     * @return void
-     */
-    public function data_preprocessing(&$defaultvalues): void {
-        parent::data_preprocessing($defaultvalues);
-
-        $defaultvalues['completionchecksenabled'] = !empty($defaultvalues['completionchecks']) ? 1 : 0;
-
-        if (empty($defaultvalues['completionchecks'])) {
-            $defaultvalues['completionchecks'] = 1;
-        }
+        return !empty($data['completionsubmit']);
     }
 
     /**

@@ -102,8 +102,6 @@ function codereview_prepare_instance_data(stdClass $data): void {
     $data->citimeout = max(1, (int) ($data->citimeout ?? 30));
     $data->integritychecks = empty($data->integritychecks) ? 0 : 1;
     $data->completionsubmit = empty($data->completionsubmit) ? 0 : 1;
-    $data->completionchecks = empty($data->completionchecksenabled) ? 0 : max(0, (int) ($data->completionchecks ?? 0));
-    unset($data->completionchecksenabled);
 
     // The instance stores only a pointer to whoever owns the token, never the token
     // itself, so that no secret ever travels through a course-scoped form.
@@ -165,7 +163,7 @@ function codereview_delete_instance(int $id): bool {
 function codereview_get_coursemodule_info(stdClass $coursemodule) {
     global $DB;
 
-    $fields = 'id, name, intro, introformat, completionsubmit, completionchecks';
+    $fields = 'id, name, intro, introformat, completionsubmit';
     $instance = $DB->get_record('codereview', ['id' => $coursemodule->instance], $fields);
 
     if (!$instance) {
@@ -181,7 +179,6 @@ function codereview_get_coursemodule_info(stdClass $coursemodule) {
 
     if ($coursemodule->completion == COMPLETION_TRACKING_AUTOMATIC) {
         $info->customdata['customcompletionrules']['completionsubmit'] = (int) $instance->completionsubmit;
-        $info->customdata['customcompletionrules']['completionchecks'] = (int) $instance->completionchecks;
     }
 
     return $info;

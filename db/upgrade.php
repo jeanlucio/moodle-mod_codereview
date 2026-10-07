@@ -137,5 +137,18 @@ function xmldb_codereview_upgrade(int $oldversion): bool {
         upgrade_mod_savepoint(true, 2026100200, 'codereview');
     }
 
+    if ($oldversion < 2026100800) {
+        // The "N automated checks passing" completion rule is gone: what the checks found is
+        // for the teacher to read, and a completion badge would show it to the student.
+        $instance = new xmldb_table('codereview');
+        $checks = new xmldb_field('completionchecks');
+
+        if ($dbman->field_exists($instance, $checks)) {
+            $dbman->drop_field($instance, $checks);
+        }
+
+        upgrade_mod_savepoint(true, 2026100800, 'codereview');
+    }
+
     return true;
 }

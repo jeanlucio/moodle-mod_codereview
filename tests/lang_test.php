@@ -39,7 +39,7 @@ final class lang_test extends advanced_testcase {
         'severityinfo', 'severitywarning', 'severityhigh',
         'flagforkofpeer', 'flagidenticalcommit', 'flagsharedhistory', 'flagcontentoverlap',
         'flagforeignauthor', 'flagimportedhistory', 'flagduplicaterepo',
-        'completiondetail:submit', 'completiondetail:checks',
+        'completiondetail:submit',
     ];
 
     /**

@@ -51,7 +51,6 @@ class mod_codereview_generator extends testing_module_generator {
             'integritychecks' => 1,
             'duedate' => 0,
             'cutoffdate' => 0,
-            'completionchecks' => 0,
             'tokenuserid' => 0,
         ];
 

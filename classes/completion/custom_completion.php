@@ -17,7 +17,6 @@
 namespace mod_codereview\completion;
 
 use core_completion\activity_custom_completion;
-use mod_codereview\local\grade_calculator;
 use mod_codereview\local\submission_service;
 
 /**
@@ -48,27 +47,9 @@ class custom_completion extends activity_custom_completion {
             return COMPLETION_INCOMPLETE;
         }
 
-        if ($rule === 'completionsubmit') {
-            return $submission->gradestatus === submission_service::GRADE_GRADED
-                ? COMPLETION_COMPLETE
-                : COMPLETION_INCOMPLETE;
-        }
-
-        $required = (int) ($this->cm->customdata['customcompletionrules']['completionchecks'] ?? 0);
-        if ($required <= 0) {
-            return COMPLETION_INCOMPLETE;
-        }
-
-        [$insql, $params] = $DB->get_in_or_equal(grade_calculator::PASSING, SQL_PARAMS_NAMED, 'con');
-        $params['submission'] = $submission->id;
-
-        $passed = $DB->count_records_select(
-            'codereview_checkruns',
-            "submission = :submission AND counted = 1 AND conclusion $insql",
-            $params
-        );
-
-        return $passed >= $required ? COMPLETION_COMPLETE : COMPLETION_INCOMPLETE;
+        return $submission->gradestatus === submission_service::GRADE_GRADED
+            ? COMPLETION_COMPLETE
+            : COMPLETION_INCOMPLETE;
     }
 
     /**
@@ -77,7 +58,7 @@ class custom_completion extends activity_custom_completion {
      * @return array
      */
     public static function get_defined_custom_rules(): array {
-        return ['completionsubmit', 'completionchecks'];
+        return ['completionsubmit'];
     }
 
     /**
@@ -86,11 +67,8 @@ class custom_completion extends activity_custom_completion {
      * @return array
      */
     public function get_custom_rule_descriptions(): array {
-        $required = (int) ($this->cm->customdata['customcompletionrules']['completionchecks'] ?? 0);
-
         return [
             'completionsubmit' => get_string('completiondetail:submit', 'mod_codereview'),
-            'completionchecks' => get_string('completiondetail:checks', 'mod_codereview', $required),
         ];
     }
 
@@ -100,6 +78,6 @@ class custom_completion extends activity_custom_completion {
      * @return array
      */
     public function get_sort_order(): array {
-        return ['completionview', 'completionsubmit', 'completionchecks', 'completionusegrade'];
+        return ['completionview', 'completionsubmit', 'completionusegrade'];
     }
 }

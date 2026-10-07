@@ -96,12 +96,14 @@ final class custom_completion_test extends advanced_testcase {
      * @return void
      */
     public function test_coursemodule_info_exposes_the_rules(): void {
-        $cm = $this->activity(['completionsubmit' => 1, 'completionchecksenabled' => 1, 'completionchecks' => 2]);
+        $cm = $this->activity(['completionsubmit' => 1]);
 
         $rules = $cm->customdata['customcompletionrules'] ?? [];
 
         $this->assertSame(1, $rules['completionsubmit']);
-        $this->assertSame(2, $rules['completionchecks']);
+        // The rule that counted passing checks is gone: it would have shown the student
+        // what the checks found through the completion badge.
+        $this->assertArrayNotHasKey('completionchecks', $rules);
     }
 
     /**
@@ -146,55 +148,11 @@ final class custom_completion_test extends advanced_testcase {
     }
 
     /**
-     * The check rule counts only passing checks that count towards the grade, so a
-     * third-party check cannot complete the activity on the student's behalf.
-     *
-     * @return void
-     */
-    public function test_check_rule_counts_only_counted_passes(): void {
-        global $DB;
-
-        $cm = $this->activity(['completionchecksenabled' => 1, 'completionchecks' => 2]);
-        $submissionid = $this->submission($cm, submission_service::GRADE_NOTGRADED);
-
-        $runs = [
-            ['tests', 'success', 1],
-            ['lint', 'failure', 1],
-            ['CodeQL', 'success', 0],
-        ];
-        foreach ($runs as $i => [$name, $conclusion, $counted]) {
-            $DB->insert_record('codereview_checkruns', (object) [
-                'submission' => $submissionid,
-                'externalid' => $i + 1,
-                'checkname' => $name,
-                'conclusion' => $conclusion,
-                'counted' => $counted,
-                'timecreated' => time(),
-            ]);
-        }
-
-        $completion = new custom_completion($cm, (int) $this->student->id);
-
-        // One counted pass against a requirement of two.
-        $this->assertSame(COMPLETION_INCOMPLETE, $completion->get_state('completionchecks'));
-
-        $DB->set_field('codereview_checkruns', 'conclusion', 'success', [
-            'submission' => $submissionid,
-            'checkname' => 'lint',
-        ]);
-
-        $this->assertSame(COMPLETION_COMPLETE, $completion->get_state('completionchecks'));
-    }
-
-    /**
-     * Both rules are declared, so core can discover them.
+     * The rule is declared, so core can discover it.
      *
      * @return void
      */
     public function test_rules_are_declared(): void {
-        $this->assertSame(
-            ['completionsubmit', 'completionchecks'],
-            custom_completion::get_defined_custom_rules()
-        );
+        $this->assertSame(['completionsubmit'], custom_completion::get_defined_custom_rules());
     }
 }
