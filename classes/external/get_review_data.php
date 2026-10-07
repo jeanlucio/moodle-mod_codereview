@@ -97,6 +97,7 @@ class get_review_data extends external_api {
             'aistatus' => new external_value(PARAM_ALPHA, 'AI review status'),
             'gradestatus' => new external_value(PARAM_ALPHA, 'Grading status'),
             'errormessage' => new external_value(PARAM_TEXT, 'Why the last attempt failed, if it did'),
+            'userid' => new external_value(PARAM_INT, 'The student the submission belongs to'),
             'grademax' => new external_value(PARAM_INT, 'Maximum grade of the activity'),
             'suggestedgrade' => new external_value(PARAM_FLOAT, 'Suggested grade, null when none', VALUE_OPTIONAL),
             'finalgrade' => new external_value(PARAM_FLOAT, 'Approved grade, null when not approved', VALUE_OPTIONAL),

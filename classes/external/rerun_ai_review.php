@@ -21,14 +21,16 @@ use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
+use mod_codereview\local\manual_runner;
 use mod_codereview\local\submission_service;
-use mod_codereview\task\run_ai_review;
 
 /**
- * Web service that asks for the AI review to be generated again.
+ * Web service that generates the AI review again, right away.
  *
  * Providers fail, time out and answer with unusable text. Without this the
- * submission would keep whatever failure it landed on forever.
+ * submission would keep whatever failure it landed on forever. It runs inside the
+ * request, not through cron: the teacher who pressed the button is watching, and the
+ * reason for a failure is exactly what they need to read.
  *
  * @package    mod_codereview
  * @copyright  2026 Jean Lúcio
@@ -47,10 +49,10 @@ class rerun_ai_review extends external_api {
     }
 
     /**
-     * Queues a fresh review.
+     * Runs a fresh review and reports how it ended.
      *
      * @param int $submissionid Submission to review again.
-     * @return array The resulting AI status.
+     * @return array The resulting AI status and, when it failed, why.
      */
     public static function execute(int $submissionid): array {
         global $DB;
@@ -69,15 +71,26 @@ class rerun_ai_review extends external_api {
         require_capability('mod/codereview:grade', $context);
         require_sesskey();
 
-        $DB->set_field('codereview_submissions', 'aistatus', submission_service::AI_PENDING, [
-            'id' => $submissionid,
-        ]);
+        $submission = $DB->get_record('codereview_submissions', ['id' => $submissionid], '*', MUST_EXIST);
 
-        // Reusing any review already queued keeps a repeated click from spending the
-        // provider budget several times over on the same submission.
-        run_ai_review::queue($submissionid);
+        // A second click while this one runs is refused by the runner rather than
+        // queued, so the provider budget is not spent twice on the same submission.
+        $status = manual_runner::rerun_ai($instance, $submission, $context);
 
-        return ['aistatus' => submission_service::AI_PENDING];
+        $error = '';
+        if ($status === submission_service::AI_ERROR) {
+            $latest = $DB->get_records(
+                'codereview_airesults',
+                ['submission' => $submissionid],
+                'id DESC',
+                'id, errormessage',
+                0,
+                1
+            );
+            $error = (string) (reset($latest)->errormessage ?? '');
+        }
+
+        return ['aistatus' => $status, 'error' => $error];
     }
 
     /**
@@ -87,7 +100,8 @@ class rerun_ai_review extends external_api {
      */
     public static function execute_returns(): external_single_structure {
         return new external_single_structure([
-            'aistatus' => new external_value(PARAM_ALPHA, 'AI review status after queueing'),
+            'aistatus' => new external_value(PARAM_ALPHA, 'AI review status after the run'),
+            'error' => new external_value(PARAM_TEXT, 'Why the run failed, empty when it did not'),
         ]);
     }
 }

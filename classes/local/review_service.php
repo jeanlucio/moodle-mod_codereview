@@ -63,6 +63,7 @@ class review_service {
 
         return [
             'submissionid' => (int) $submission->id,
+            'userid' => (int) $submission->userid,
             'studentname' => $student ? fullname($student) : '',
             'repourl' => (string) $submission->repourl,
             'repoowner' => (string) $submission->repoowner,

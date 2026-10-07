@@ -191,6 +191,54 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
+     * The error stored on the submission is shown to the teacher, and not twice when the AI
+     * panel already says the same thing.
+     *
+     * @return void
+     */
+    public function test_review_page_shows_the_submission_error_once(): void {
+        global $DB, $PAGE;
+
+        $DB->set_field('codereview_submissions', 'errormessage', 'GitHub is unreachable', ['id' => $this->submission->id]);
+        $submission = $DB->get_record('codereview_submissions', ['id' => $this->submission->id], '*', MUST_EXIST);
+
+        $data = review_service::get_review_data($this->instance, $submission);
+        $context = (new review_page($data, (int) $this->cm->cmid))
+            ->export_for_template($PAGE->get_renderer('mod_codereview'));
+
+        $this->assertTrue($context['showsubmissionerror']);
+        $this->assertSame((int) $this->student->id, $context['userid']);
+
+        $DB->set_field('codereview_airesults', 'status', 'error', ['submission' => $submission->id]);
+        $DB->set_field('codereview_airesults', 'errormessage', 'GitHub is unreachable', ['submission' => $submission->id]);
+
+        $data = review_service::get_review_data($this->instance, $submission);
+        $context = (new review_page($data, (int) $this->cm->cmid))
+            ->export_for_template($PAGE->get_renderer('mod_codereview'));
+
+        $this->assertFalse($context['showsubmissionerror']);
+    }
+
+    /**
+     * Before the checks settle, "skipped" is explained as waiting, not as "no AI here".
+     *
+     * @return void
+     */
+    public function test_review_page_explains_a_review_that_has_not_started(): void {
+        global $DB, $PAGE;
+
+        $DB->set_field('codereview_submissions', 'aistatus', submission_service::AI_SKIPPED, ['id' => $this->submission->id]);
+        $DB->set_field('codereview_submissions', 'cistatus', submission_service::CI_PENDING, ['id' => $this->submission->id]);
+        $submission = $DB->get_record('codereview_submissions', ['id' => $this->submission->id], '*', MUST_EXIST);
+
+        $data = review_service::get_review_data($this->instance, $submission);
+        $context = (new review_page($data, (int) $this->cm->cmid))
+            ->export_for_template($PAGE->get_renderer('mod_codereview'));
+
+        $this->assertSame(get_string('aiwaitingci', 'mod_codereview'), $context['aistatuslabel']);
+    }
+
+    /**
      * Every flag type renders with a sentence, which is what catches a signal whose
      * wording was never added to the language file.
      *

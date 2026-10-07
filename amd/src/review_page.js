@@ -26,29 +26,34 @@ import Notification from 'core/notification';
 import {get_string as getString} from 'core/str';
 
 /**
- * Queues a fresh AI review for the submission.
+ * Runs one of the manual actions and reloads the page to show the outcome.
+ *
+ * The service runs the work inside the request, so the page waits. The button says so
+ * while it does, and a failure the service reports as an exception (another run still
+ * going, no permission) is shown as the message it carries.
  *
  * @param {HTMLElement} button The button that was pressed.
+ * @param {Object} call The web service call to make.
+ * @param {string} titlekey The string key for the alert title.
  */
-const rerunAiReview = async(button) => {
-    const submissionid = parseInt(button.dataset.submissionid, 10);
+const runManually = async(button, call, titlekey) => {
+    const label = button.textContent;
 
     button.disabled = true;
+    button.textContent = await getString('runningnow', 'mod_codereview');
 
     try {
-        await Ajax.call([{
-            methodname: 'mod_codereview_rerun_ai_review',
-            args: {submissionid: submissionid},
-        }])[0];
+        await Ajax.call([call])[0];
 
         window.location.reload();
     } catch (error) {
         button.disabled = false;
+        button.textContent = label;
 
         // The service throws a deliberate exception for anticipated refusals, so the
         // message it carries is meant to be read. Notification.exception() is for
         // genuine bugs and would show a stack trace instead.
-        const title = await getString('rerunaireview', 'mod_codereview');
+        const title = await getString(titlekey, 'mod_codereview');
         Notification.alert(title, error.message);
     }
 };
@@ -61,11 +66,27 @@ export const init = () => {
     }
 
     region.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-action="rerun-ai"]');
-
-        if (button) {
+        const rerun = event.target.closest('[data-action="rerun-ai"]');
+        if (rerun) {
             event.preventDefault();
-            rerunAiReview(button);
+            runManually(rerun, {
+                methodname: 'mod_codereview_rerun_ai_review',
+                args: {submissionid: parseInt(rerun.dataset.submissionid, 10)},
+            }, 'rerunaireview');
+
+            return;
+        }
+
+        const recheck = event.target.closest('[data-action="recheck-ci"]');
+        if (recheck) {
+            event.preventDefault();
+            runManually(recheck, {
+                methodname: 'mod_codereview_recheck_ci',
+                args: {
+                    cmid: parseInt(region.dataset.cmid, 10),
+                    userid: parseInt(recheck.dataset.userid, 10),
+                },
+            }, 'recheckci');
         }
     });
 };

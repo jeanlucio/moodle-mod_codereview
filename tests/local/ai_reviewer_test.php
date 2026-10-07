@@ -313,4 +313,42 @@ final class ai_reviewer_test extends advanced_testcase {
             (new ai_reviewer($client, $gateway))->review($this->instance, $this->submission, $this->context)
         );
     }
+
+    /**
+     * Some models put real line breaks inside the feedback string, which JSON forbids.
+     * The answer is still good, so it must not be thrown away for its escaping.
+     *
+     * @return void
+     */
+    public function test_raw_line_breaks_inside_feedback_are_accepted(): void {
+        global $DB;
+
+        $client = $this->client_with(['main.py' => 'print(1)']);
+        $gateway = new ai_gateway_stub("{\"grade\": 60, \"feedback\": \"First line.\n\nSecond line.\tTabbed.\"}");
+
+        $status = (new ai_reviewer($client, $gateway))->review($this->instance, $this->submission, $this->context);
+
+        $this->assertSame(submission_service::AI_COMPLETED, $status);
+        $feedback = (string) $DB->get_field('codereview_airesults', 'feedback', ['submission' => $this->submission->id]);
+        $this->assertStringContainsString("First line.\n\nSecond line.", $feedback);
+    }
+
+    /**
+     * A path the tree lists but the archive leaves out is not truncation. The lab marks
+     * .github/ and .gitattributes as export-ignore, so every one of its repositories
+     * looks like that.
+     *
+     * @return void
+     */
+    public function test_a_file_left_out_of_the_archive_is_not_truncation(): void {
+        global $DB;
+
+        $client = $this->client_with(['main.py' => 'print(1)', '.gitattributes' => '/.github/ export-ignore']);
+        $client->set_archive($this->build_zip(['main.py' => 'print(1)']));
+        $gateway = new ai_gateway_stub('{"grade": 70, "feedback": "Fine"}');
+
+        (new ai_reviewer($client, $gateway))->review($this->instance, $this->submission, $this->context);
+
+        $this->assertSame(0, (int) $DB->get_field('codereview_submissions', 'truncated', ['id' => $this->submission->id]));
+    }
 }

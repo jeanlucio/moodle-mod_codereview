@@ -57,6 +57,9 @@ class ai_reviewer {
     /** @var ai_gateway The provider used to generate the suggestion. */
     protected ai_gateway $gateway;
 
+    /** @var ai_gateway|null A double installed by tests, so services can be exercised without a provider. */
+    private static ?ai_gateway $testgateway = null;
+
     /**
      * Constructor.
      *
@@ -75,7 +78,30 @@ class ai_reviewer {
      * @return self
      */
     public static function for_instance(stdClass $instance): self {
-        return new self(github_client::instance(github_token::resolve($instance)), new ai_gateway());
+        return new self(github_client::instance(github_token::resolve($instance)), self::gateway());
+    }
+
+    /**
+     * Returns the gateway every caller should use to reach a provider.
+     *
+     * @return ai_gateway
+     */
+    public static function gateway(): ai_gateway {
+        return self::$testgateway ?? new ai_gateway();
+    }
+
+    /**
+     * Installs a gateway double. Only available while testing.
+     *
+     * @param ai_gateway|null $gateway The double, or null to go back to the real one.
+     * @return void
+     */
+    public static function set_gateway_for_testing(?ai_gateway $gateway): void {
+        if (!defined('PHPUNIT_TEST') && !defined('BEHAT_SITE_RUNNING')) {
+            throw new \coding_exception('set_gateway_for_testing() is only available while testing');
+        }
+
+        self::$testgateway = $gateway;
     }
 
     /**
@@ -273,10 +299,9 @@ class ai_reviewer {
         $zip->close();
         unlink($tempfile);
 
-        if (count($sources) < count($eligible)) {
-            $truncated = true;
-        }
-
+        // Only a file that did not fit the budget counts as truncation (flagged above). A
+        // path the tree lists but the archive lacks is not one: export-ignore rules, which
+        // the lab writes for .github/ and .gitattributes, make GitHub leave such files out.
         return ['sources' => $sources, 'truncated' => $truncated];
     }
 
@@ -352,6 +377,20 @@ class ai_reviewer {
     }
 
     /**
+     * Escapes raw control characters that appear inside JSON string literals.
+     *
+     * @param string $json The JSON text as the model wrote it.
+     * @return string The same text with line breaks and tabs inside strings escaped.
+     */
+    protected function escape_control_characters(string $json): string {
+        return (string) preg_replace_callback(
+            '/"(?:[^"\\\\]|\\\\.)*"/s',
+            static fn(array $match): string => strtr($match[0], ["\r" => '\\r', "\n" => '\\n', "\t" => '\\t']),
+            $json
+        );
+    }
+
+    /**
      * Validates the provider's answer.
      *
      * Model output is untrusted input: it can be prose instead of JSON, carry a grade
@@ -371,6 +410,12 @@ class ai_reviewer {
         }
 
         $decoded = json_decode($text, true);
+        if ($decoded === null) {
+            // Some models put real line breaks inside the feedback string, which JSON
+            // forbids. The answer is usable; only its escaping is wrong.
+            $decoded = json_decode($this->escape_control_characters($text), true);
+        }
+
         if (!is_array($decoded) || !isset($decoded['grade'], $decoded['feedback'])) {
             return null;
         }

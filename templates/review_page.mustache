@@ -25,9 +25,13 @@
     Data attributes required for JS:
     * data-region="codereview-review"
     * data-action="rerun-ai"
+    * data-action="recheck-ci"
 
     Context variables required for this template:
     * submissionid int The submission being reviewed
+    * userid int The student the submission belongs to
+    * showsubmissionerror bool Whether to print the error recorded on the submission
+    * errormessage string The error recorded on the submission, if any
     * repourl string Link to the repository on GitHub
     * commitsha string The submitted commit
     * checkruns array The automated check results
@@ -37,6 +41,9 @@
     Example context (json):
     {
         "submissionid": 12,
+        "userid": 5,
+        "showsubmissionerror": false,
+        "errormessage": "",
         "repourl": "https://github.com/octocat/hello-world",
         "repoowner": "octocat",
         "commitsha": "1234567890abcdef1234567890abcdef12345678",
@@ -66,7 +73,8 @@
         "cmid": 7
     }
 }}
-<div class="cr-review" data-region="codereview-review" data-submissionid="{{submissionid}}">
+<div class="cr-review" data-region="codereview-review" data-submissionid="{{submissionid}}"
+     data-cmid="{{cmid}}">
 
     <div class="cr-panel">
         <h3>{{#str}} submissiondetails, mod_codereview {{/str}}</h3>
@@ -96,6 +104,16 @@
             </p>
         {{/islate}}
     </div>
+
+    {{#showsubmissionerror}}
+        <div class="cr-panel">
+            <h3>{{#str}} lasterror, mod_codereview {{/str}}</h3>
+            <p class="cr-alert cr-alert-warning">
+                <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                {{errormessage}}
+            </p>
+        </div>
+    {{/showsubmissionerror}}
 
     <div class="cr-panel">
         <h3>{{#str}} checkruns, mod_codereview {{/str}}</h3>
@@ -140,6 +158,10 @@
         {{^hascheckruns}}
             <p>{{#str}} nocheckruns, mod_codereview {{/str}}</p>
         {{/hascheckruns}}
+        <button type="button" class="btn btn-secondary btn-sm" data-action="recheck-ci"
+                data-userid="{{userid}}">
+            {{#str}} recheckci, mod_codereview {{/str}}
+        </button>
     </div>
 
     <div class="cr-panel">

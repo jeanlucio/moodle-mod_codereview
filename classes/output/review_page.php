@@ -16,6 +16,10 @@
 
 namespace mod_codereview\output;
 
+use context_module;
+use mod_codereview\local\ai_reviewer;
+use mod_codereview\local\status_labels;
+use mod_codereview\local\submission_service;
 use renderable;
 use renderer_base;
 use templatable;
@@ -82,7 +86,12 @@ class review_page implements renderable, templatable {
         $context['submitteddateformatted'] = userdate($data['timesubmitted']);
 
         $context['cistatuslabel'] = get_string('ci' . $data['cistatus'], 'mod_codereview');
-        $context['aistatuslabel'] = get_string('ai' . $data['aistatus'], 'mod_codereview');
+        $context['aistatuslabel'] = $this->ai_label($data);
+
+        // The error recorded on the submission itself, shown once: when the AI panel
+        // already prints the same text there is nothing to add.
+        $error = (string) ($data['errormessage'] ?? '');
+        $context['showsubmissionerror'] = $error !== '' && $error !== (string) ($airesult['errormessage'] ?? '');
 
         foreach ($context['flags'] as $index => $flag) {
             $context['flags'][$index]['severitylabel'] = get_string('severity' . $flag['severity'], 'mod_codereview');
@@ -90,5 +99,29 @@ class review_page implements renderable, templatable {
         }
 
         return $context;
+    }
+
+    /**
+     * Works out the label for the AI review, given what the activity is set up to do.
+     *
+     * @param array $data The review payload.
+     * @return string
+     */
+    protected function ai_label(array $data): string {
+        global $DB;
+
+        $weightai = 0;
+        $available = false;
+
+        $cm = get_coursemodule_from_id('codereview', $this->cmid, 0, false, IGNORE_MISSING);
+        if ($cm) {
+            $weightai = (int) $DB->get_field('codereview', 'weightai', ['id' => $cm->instance]);
+            // Only worth asking a provider when the answer can change the wording.
+            if ($data['aistatus'] === submission_service::AI_SKIPPED && $weightai > 0) {
+                $available = ai_reviewer::gateway()->is_available(context_module::instance($cm->id));
+            }
+        }
+
+        return status_labels::ai($weightai, (string) $data['cistatus'], (string) $data['aistatus'], $available);
     }
 }

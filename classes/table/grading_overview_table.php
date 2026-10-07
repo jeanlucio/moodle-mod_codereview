@@ -18,6 +18,8 @@ namespace mod_codereview\table;
 
 use context_module;
 use html_writer;
+use mod_codereview\local\ai_reviewer;
+use mod_codereview\local\status_labels;
 use moodle_url;
 use stdClass;
 use table_sql;
@@ -47,6 +49,9 @@ class grading_overview_table extends table_sql {
 
     /** @var int The course module id, for building links. */
     protected int $cmid;
+
+    /** @var bool|null Whether an AI provider can answer, looked up on first use. */
+    protected ?bool $aiavailable = null;
 
     /** @var array Flag counts of the current page, keyed by submission id. */
     protected array $flagcounts = [];
@@ -173,7 +178,25 @@ class grading_overview_table extends table_sql {
      * @return string
      */
     public function col_aistatus($row): string {
-        return $this->status_badge('ai', (string) $row->aistatus);
+        $label = status_labels::ai(
+            (int) $this->instance->weightai,
+            (string) $row->cistatus,
+            (string) $row->aistatus,
+            $this->ai_provider_available()
+        );
+
+        return $this->status_badge('ai', (string) $row->aistatus, $label);
+    }
+
+    /**
+     * Tells whether a provider would answer now, asking only once for the whole table.
+     *
+     * @return bool
+     */
+    protected function ai_provider_available(): bool {
+        $this->aiavailable ??= ai_reviewer::gateway()->is_available($this->context);
+
+        return $this->aiavailable;
     }
 
     /**
@@ -308,9 +331,10 @@ class grading_overview_table extends table_sql {
      *
      * @param string $kind Either ci or ai.
      * @param string $status The stored status value.
+     * @param string|null $label The words to show, when they are not simply the status.
      * @return string
      */
-    protected function status_badge(string $kind, string $status): string {
+    protected function status_badge(string $kind, string $status, ?string $label = null): string {
         $map = [
             'pending' => ['secondary', 't/hide'],
             'checking' => ['info', 'i/loading_small'],
@@ -321,7 +345,7 @@ class grading_overview_table extends table_sql {
         ];
 
         [$colour] = $map[$status] ?? ['secondary', 't/hide'];
-        $label = get_string($kind . $status, 'mod_codereview');
+        $label ??= get_string($kind . $status, 'mod_codereview');
 
         return html_writer::span($label, 'badge bg-' . $colour . ' cr-badge-' . $status);
     }

@@ -203,11 +203,28 @@ final class submit_repo_test extends externallib_advanced_testcase {
         $submissionid = $DB->get_field('codereview_submissions', 'id', ['userid' => $this->student->id]);
         $DB->set_field('codereview_submissions', 'cistatus', 'nocidetected', ['id' => $submissionid]);
 
+        github_client::instance('')->set_response('/repos/octocat/hello-world/commits/' . self::SHA . '/check-runs', [
+            'total_count' => 1,
+            'check_runs' => [[
+                'id' => 1,
+                'name' => 'pytest',
+                'status' => 'completed',
+                'conclusion' => 'success',
+                'app' => ['slug' => 'github-actions'],
+                'html_url' => 'https://github.com/octocat/hello-world/runs/1',
+                'started_at' => '2026-07-20T10:00:00Z',
+                'completed_at' => '2026-07-20T10:02:00Z',
+            ]],
+        ]);
+
         $teacher = $this->getDataGenerator()->create_and_enrol($this->course, 'editingteacher');
         $this->login_as($teacher);
 
         $result = recheck_ci::execute((int) $this->cm->cmid, (int) $this->student->id);
 
-        $this->assertSame('checking', $result['cistatus']);
+        // A grader's recheck runs in the request and reports the outcome; nothing is queued.
+        $this->assertSame('completed', $result['cistatus']);
+        $this->assertSame('', $result['error']);
+        $this->assertSame(1, $DB->count_records('codereview_checkruns', ['submission' => $submissionid]));
     }
 }
