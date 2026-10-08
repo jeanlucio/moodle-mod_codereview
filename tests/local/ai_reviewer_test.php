@@ -351,4 +351,43 @@ final class ai_reviewer_test extends advanced_testcase {
 
         $this->assertSame(0, (int) $DB->get_field('codereview_submissions', 'truncated', ['id' => $this->submission->id]));
     }
+
+    /**
+     * The review runs as the owner of the activity's credentials, so a background run, which
+     * has no logged-in user, still reaches that teacher's own AI keys.
+     *
+     * @return void
+     */
+    public function test_the_review_is_made_with_the_owners_credentials(): void {
+        global $DB;
+
+        $this->instance->tokenuserid = 9;
+        $DB->update_record('codereview', $this->instance);
+        $client = $this->client_with(['main.py' => 'print(1)']);
+        $gateway = new ai_gateway_stub('{"grade": 85, "feedback": "Clear."}');
+        $gateway->onlyavailablefor = 9;
+
+        $status = (new ai_reviewer($client, $gateway))->review($this->instance, $this->submission, $this->context);
+
+        $this->assertSame(submission_service::AI_COMPLETED, $status);
+        $this->assertSame(9, $gateway->askedavailabilityfor);
+        $this->assertSame(9, $gateway->generatedfor);
+    }
+
+    /**
+     * Without an owner nothing is borrowed from anybody: the site's keys decide, as before.
+     *
+     * @return void
+     */
+    public function test_without_an_owner_no_ones_credentials_are_asked_for(): void {
+        $client = $this->client_with(['main.py' => 'print(1)']);
+        $gateway = new ai_gateway_stub('{"grade": 85, "feedback": "x"}');
+        $gateway->onlyavailablefor = 9;
+
+        $status = (new ai_reviewer($client, $gateway))->review($this->instance, $this->submission, $this->context);
+
+        $this->assertSame(submission_service::AI_SKIPPED, $status);
+        $this->assertSame(0, $gateway->askedavailabilityfor);
+        $this->assertSame(0, $gateway->generatecalls);
+    }
 }

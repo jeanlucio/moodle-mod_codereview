@@ -93,7 +93,7 @@ function codereview_update_instance(stdClass $data, ?mod_codereview_mod_form $mf
  * @return void
  */
 function codereview_prepare_instance_data(stdClass $data): void {
-    global $USER;
+    global $DB, $USER;
 
     // The form guarantees the two weights add up to 100; clamping here only guards
     // against a caller that bypassed it, such as the test generator.
@@ -103,12 +103,24 @@ function codereview_prepare_instance_data(stdClass $data): void {
     $data->integritychecks = empty($data->integritychecks) ? 0 : 1;
     $data->completionsubmit = empty($data->completionsubmit) ? 0 : 1;
 
-    // The instance stores only a pointer to whoever owns the token, never the token
-    // itself, so that no secret ever travels through a course-scoped form.
+    // The instance stores only a pointer to whoever owns the personal credentials (the
+    // GitHub token and the AI keys), never the secrets themselves, so that none of them ever
+    // travels through a course-scoped form. The pointer is not a form field, so a form that
+    // is saved without touching the checkbox must leave it where it was: only the owner
+    // unticking it gives the credentials up, and only ticking it takes them over.
+    $current = 0;
+    if (!empty($data->instance)) {
+        $current = (int) $DB->get_field('codereview', 'tokenuserid', ['id' => $data->instance]);
+    }
+
     if (!empty($data->tokenusemine)) {
         $data->tokenuserid = (int) $USER->id;
-    } else if (!isset($data->tokenuserid)) {
+    } else if (isset($data->tokenuserid)) {
+        $data->tokenuserid = (int) $data->tokenuserid;
+    } else if (isset($data->tokenusemine) && $current === (int) $USER->id) {
         $data->tokenuserid = 0;
+    } else {
+        $data->tokenuserid = $current;
     }
 
     unset($data->tokenusemine);

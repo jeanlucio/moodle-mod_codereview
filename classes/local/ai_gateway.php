@@ -34,10 +34,11 @@ class ai_gateway {
      * Returns true when some provider is expected to answer.
      *
      * @param context $context The course or activity context the request belongs to.
+     * @param int $userid Whose personal keys count, or 0 to leave it to whoever is logged in.
      * @return bool
      */
-    public function is_available(context $context): bool {
-        if (class_exists(\local_aihub\ai::class) && \local_aihub\ai::is_available()) {
+    public function is_available(context $context, int $userid = 0): bool {
+        if ($this->hub_installed() && $this->hub_is_available($userid > 0 ? $userid : null)) {
             return true;
         }
 
@@ -50,22 +51,17 @@ class ai_gateway {
      * @param string $system The system prompt.
      * @param string $user The user prompt.
      * @param context $context The course or activity context the request belongs to.
+     * @param int $userid Whose personal keys are tried first, or 0 to leave it to whoever is logged in.
      * @return array{success: bool, text: string, provider: string, model: string, error: string}
      */
-    public function generate(string $system, string $user, context $context): array {
+    public function generate(string $system, string $user, context $context, int $userid = 0): array {
         $hubmessage = '';
 
-        if (class_exists(\local_aihub\ai::class)) {
+        if ($this->hub_installed()) {
             // The hub answers with an array whose generated text is under "data" and
             // whose failure reason is under "message". Reading it as an object, or
             // looking for "text", silently turns every success into a fallback.
-            $result = \local_aihub\ai::generate_text(
-                $system,
-                $user,
-                true,
-                'mod_codereview',
-                'Code review suggestion'
-            );
+            $result = $this->hub_generate($system, $user, $userid > 0 ? $userid : null);
 
             if (!empty($result['success'])) {
                 return [
@@ -89,6 +85,47 @@ class ai_gateway {
         }
 
         return $result;
+    }
+
+    /**
+     * Returns true when local_aihub is installed.
+     *
+     * @return bool
+     */
+    protected function hub_installed(): bool {
+        return class_exists(\local_aihub\ai::class);
+    }
+
+    /**
+     * Asks the hub whether a key would resolve for a user.
+     *
+     * The three hub calls are kept apart from the logic around them so that tests can stand
+     * in for the hub, which is not installed wherever the plugin's own CI runs.
+     *
+     * @param int|null $userid Whose personal keys count, or null for whoever is logged in.
+     * @return bool
+     */
+    protected function hub_is_available(?int $userid): bool {
+        return \local_aihub\ai::is_available($userid);
+    }
+
+    /**
+     * Asks the hub for a completion.
+     *
+     * @param string $system The system prompt.
+     * @param string $user The user prompt.
+     * @param int|null $userid Whose personal keys are tried first, or null for whoever is logged in.
+     * @return array The hub's answer.
+     */
+    protected function hub_generate(string $system, string $user, ?int $userid): array {
+        return \local_aihub\ai::generate_text(
+            $system,
+            $user,
+            true,
+            'mod_codereview',
+            'Code review suggestion',
+            $userid
+        );
     }
 
     /**

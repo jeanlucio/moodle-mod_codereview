@@ -115,10 +115,16 @@ class review_page implements renderable, templatable {
 
         $cm = get_coursemodule_from_id('codereview', $this->cmid, 0, false, IGNORE_MISSING);
         if ($cm) {
-            $weightai = (int) $DB->get_field('codereview', 'weightai', ['id' => $cm->instance]);
-            // Only worth asking a provider when the answer can change the wording.
+            $instance = $DB->get_record('codereview', ['id' => $cm->instance], 'id, weightai, tokenuserid');
+            $weightai = $instance ? (int) $instance->weightai : 0;
+            // Only worth asking a provider when the answer can change the wording. It is asked
+            // for the owner of the credentials, as the automatic run does, and not for the
+            // teacher looking at the page, whose own keys that run would never use.
             if ($data['aistatus'] === submission_service::AI_SKIPPED && $weightai > 0) {
-                $available = ai_reviewer::gateway()->is_available(context_module::instance($cm->id));
+                $available = ai_reviewer::gateway()->is_available(
+                    context_module::instance($cm->id),
+                    (int) $instance->tokenuserid
+                );
             }
         }
 

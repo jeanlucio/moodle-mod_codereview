@@ -149,9 +149,15 @@ class mod_codereview_mod_form extends moodleform_mod {
 
         $mform = $this->_form;
 
+        // The same pointer serves the GitHub token and the AI keys, so the option is worth
+        // showing when either of them may be used.
+        $githubok = github_token::personal_tokens_allowed((int) $USER->id, context_course::instance($this->get_course()->id));
+        $aiok = class_exists(\local_aihub\local\keys::class)
+            && \local_aihub\local\keys::personal_keys_allowed((int) $USER->id);
+
         // Hiding the option without a word leaves the teacher hunting for a setting that is
         // only missing because the administrator has not enabled it for them.
-        if (!github_token::personal_tokens_allowed((int) $USER->id, context_course::instance($this->get_course()->id))) {
+        if (!$githubok && !$aiok) {
             $mform->addElement('static', 'tokenunavailable', '', get_string('tokenunavailable', 'mod_codereview'));
             return;
         }
@@ -177,7 +183,7 @@ class mod_codereview_mod_form extends moodleform_mod {
         $mform->setDefault('tokenusemine', $current === (int) $USER->id ? 1 : 0);
         $mform->addHelpButton('tokenusemine', 'tokenusemine', 'mod_codereview');
 
-        if (!github_token::has_personal_token((int) $USER->id)) {
+        if ($githubok && !github_token::has_personal_token((int) $USER->id)) {
             $link = html_writer::link(
                 new moodle_url('/mod/codereview/mytoken.php'),
                 get_string('mytoken', 'mod_codereview')

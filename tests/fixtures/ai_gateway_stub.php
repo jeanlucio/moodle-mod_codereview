@@ -36,6 +36,15 @@ class ai_gateway_stub extends ai_gateway {
     /** @var string The user prompt of the most recent request. */
     public string $lastuserprompt = '';
 
+    /** @var int|null When set, a provider only looks reachable for this user. */
+    public ?int $onlyavailablefor = null;
+
+    /** @var int The user the last availability question was asked for. */
+    public int $askedavailabilityfor = -1;
+
+    /** @var int The user the last completion was requested for. */
+    public int $generatedfor = -1;
+
     /** @var string The answer to return. */
     protected string $response;
 
@@ -57,10 +66,13 @@ class ai_gateway_stub extends ai_gateway {
      * Returns whether a provider should look reachable.
      *
      * @param context $context The context the request belongs to.
+     * @param int $userid Whose credentials are asked about, or 0 for nobody in particular.
      * @return bool
      */
-    public function is_available(context $context): bool {
-        return $this->available;
+    public function is_available(context $context, int $userid = 0): bool {
+        $this->askedavailabilityfor = $userid;
+
+        return $this->onlyavailablefor !== null ? $userid === $this->onlyavailablefor : $this->available;
     }
 
     /**
@@ -69,11 +81,13 @@ class ai_gateway_stub extends ai_gateway {
      * @param string $system The system prompt.
      * @param string $user The user prompt.
      * @param context $context The context the request belongs to.
+     * @param int $userid Whose credentials the request is made with, or 0 for nobody in particular.
      * @return array{success: bool, text: string, provider: string, model: string, error: string}
      */
-    public function generate(string $system, string $user, context $context): array {
+    public function generate(string $system, string $user, context $context, int $userid = 0): array {
         $this->generatecalls++;
         $this->lastuserprompt = $user;
+        $this->generatedfor = $userid;
 
         return [
             'success' => true,

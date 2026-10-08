@@ -391,4 +391,40 @@ final class renderer_test extends advanced_testcase {
             $this->assertNotSame('', get_string('ai' . $status, 'mod_codereview'));
         }
     }
+
+    /**
+     * The AI label describes what the automatic run will find, so it is worked out for the
+     * owner of the credentials and not for whoever happens to be looking at the page.
+     *
+     * @return void
+     */
+    public function test_the_ai_label_follows_the_owner_of_the_credentials(): void {
+        global $DB, $PAGE;
+
+        require_once(__DIR__ . '/../fixtures/ai_gateway_stub.php');
+        $DB->set_field('codereview_submissions', 'aistatus', submission_service::AI_SKIPPED, ['id' => $this->submission->id]);
+        $this->submission->aistatus = submission_service::AI_SKIPPED;
+        $DB->set_field('codereview', 'weightai', 50, ['id' => $this->instance->id]);
+        $gateway = new \mod_codereview\fixtures\ai_gateway_stub();
+        $gateway->onlyavailablefor = 9;
+        \mod_codereview\local\ai_reviewer::set_gateway_for_testing($gateway);
+
+        $label = function () use ($PAGE): string {
+            $data = review_service::get_review_data(
+                $this->instance,
+                $this->submission
+            );
+            $context = (new review_page($data, (int) $this->cm->cmid))
+                ->export_for_template($PAGE->get_renderer('mod_codereview'));
+
+            return $context['aistatuslabel'];
+        };
+
+        $this->assertSame(get_string('ainoprovider', 'mod_codereview'), $label());
+
+        $DB->set_field('codereview', 'tokenuserid', 9, ['id' => $this->instance->id]);
+        $this->assertSame(get_string('aipending', 'mod_codereview'), $label());
+
+        \mod_codereview\local\ai_reviewer::set_gateway_for_testing(null);
+    }
 }

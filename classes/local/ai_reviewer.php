@@ -116,7 +116,12 @@ class ai_reviewer {
         // Nothing is sent anywhere when the teacher gave the AI no weight, or when no
         // provider would answer: skipping outright avoids the cost, the latency and
         // the transfer of student code to a third party that nobody asked for.
-        if ((int) $instance->weightai <= 0 || !$this->gateway->is_available($context)) {
+        //
+        // The review is made with the credentials of whoever the activity points to, not
+        // of whoever triggers it: this runs from cron, where nobody is logged in, and the
+        // teacher who chose to use their own keys expects them to be the ones used.
+        $owner = (int) ($instance->tokenuserid ?? 0);
+        if ((int) $instance->weightai <= 0 || !$this->gateway->is_available($context, $owner)) {
             return $this->finish($submission, submission_service::AI_SKIPPED, null);
         }
 
@@ -137,7 +142,8 @@ class ai_reviewer {
         $result = $this->gateway->generate(
             $this->system_prompt(),
             $this->user_prompt($instance, $submission, $files['sources']),
-            $context
+            $context,
+            $owner
         );
 
         if (empty($result['success'])) {
