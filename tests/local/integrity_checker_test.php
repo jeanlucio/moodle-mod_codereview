@@ -230,12 +230,27 @@ final class integrity_checker_test extends advanced_testcase {
     }
 
     /**
-     * A commit dated before its repository existed came from somewhere else. The
-     * repository timestamp is server generated, unlike the commit date.
+     * Returns the severity stored for one flag type of a submission.
+     *
+     * @param int $submissionid The submission.
+     * @param string $type The flag type constant.
+     * @return string|null The severity, or null when the flag was not raised.
+     */
+    private function severity(int $submissionid, string $type): ?string {
+        global $DB;
+
+        $severity = $DB->get_field('codereview_flags', 'severity', ['submission' => $submissionid, 'flagtype' => $type]);
+
+        return $severity === false ? null : $severity;
+    }
+
+    /**
+     * A commit dated before its repository existed was written elsewhere or locally first.
+     * Alone that is the ordinary way to start a project, so it is information only.
      *
      * @return void
      */
-    public function test_imported_history_is_flagged(): void {
+    public function test_imported_history_alone_is_only_information(): void {
         $submission = $this->submission('ana', [
             'repocreatedat' => time(),
             'commitauthordate' => time() - (30 * DAYSECS),
@@ -243,7 +258,42 @@ final class integrity_checker_test extends advanced_testcase {
 
         (new integrity_checker())->check($this->instance, $submission);
 
-        $this->assertContains(integrity_checker::FLAG_IMPORTEDHISTORY, $this->flags($submission->id));
+        $this->assertSame('info', $this->severity($submission->id, integrity_checker::FLAG_IMPORTEDHISTORY));
+    }
+
+    /**
+     * The same signal next to an exact duplicate points the same way, so it becomes a warning.
+     *
+     * @return void
+     */
+    public function test_imported_history_with_another_signal_is_a_warning(): void {
+        $sha = str_repeat('a', 40);
+        $this->submission('ana', ['commitsha' => $sha]);
+        $submission = $this->submission('bia', [
+            'commitsha' => $sha,
+            'repocreatedat' => time(),
+            'commitauthordate' => time() - (30 * DAYSECS),
+        ]);
+
+        (new integrity_checker())->check($this->instance, $submission);
+
+        $this->assertSame('warning', $this->severity($submission->id, integrity_checker::FLAG_IMPORTEDHISTORY));
+    }
+
+    /**
+     * A commit made after the repository existed is not history from elsewhere.
+     *
+     * @return void
+     */
+    public function test_commit_after_repository_creation_is_not_flagged(): void {
+        $submission = $this->submission('ana', [
+            'repocreatedat' => time() - DAYSECS,
+            'commitauthordate' => time(),
+        ]);
+
+        (new integrity_checker())->check($this->instance, $submission);
+
+        $this->assertNotContains(integrity_checker::FLAG_IMPORTEDHISTORY, $this->flags($submission->id));
     }
 
     /**

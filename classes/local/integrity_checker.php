@@ -89,9 +89,9 @@ class integrity_checker {
             $this->check_identical_commit($submission, $peers),
             $this->check_shared_history($instance, $submission, $peers),
             $this->check_foreign_author($instance, $submission, $peers),
-            $this->check_imported_history($submission),
             $this->check_content_overlap($instance, $submission)
         );
+        $flags = array_merge($flags, $this->check_imported_history($submission, $flags));
 
         foreach ($flags as $flag) {
             $flag->submission = $submission->id;
@@ -274,12 +274,15 @@ class integrity_checker {
      *
      * The repository creation timestamp comes from GitHub's own servers and cannot be
      * forged, unlike the commit date. A commit authored before its repository existed
-     * was therefore written somewhere else and imported.
+     * was therefore written somewhere else, or locally before the repository was created.
+     * The second case is the ordinary way to start a project, so on its own this is only
+     * information; it becomes a warning when another signal points the same way.
      *
      * @param stdClass $submission The submission row.
+     * @param stdClass[] $others The flags the other checks already raised.
      * @return stdClass[]
      */
-    protected function check_imported_history(stdClass $submission): array {
+    protected function check_imported_history(stdClass $submission, array $others): array {
         $created = (int) $submission->repocreatedat;
         $authored = (int) $submission->commitauthordate;
 
@@ -287,9 +290,15 @@ class integrity_checker {
             return [];
         }
 
-        return [$this->flag(self::FLAG_IMPORTEDHISTORY, 'warning', null, [
+        $corroborated = false;
+        foreach ($others as $other) {
+            $corroborated = $corroborated || in_array($other->severity, ['warning', 'high'], true);
+        }
+
+        return [$this->flag(self::FLAG_IMPORTEDHISTORY, $corroborated ? 'warning' : 'info', null, [
             'repocreatedat' => $created,
             'commitauthordate' => $authored,
+            'gap' => $created - $authored,
         ])];
     }
 

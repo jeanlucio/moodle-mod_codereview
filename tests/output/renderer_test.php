@@ -161,6 +161,31 @@ final class renderer_test extends advanced_testcase {
     }
 
     /**
+     * The imported history flag tells the teacher how far before the repository the commit is.
+     *
+     * @return void
+     */
+    public function test_imported_history_flag_states_the_gap(): void {
+        global $DB, $PAGE;
+
+        $DB->insert_record('codereview_flags', (object) [
+            'submission' => $this->submission->id,
+            'flagtype' => integrity_checker::FLAG_IMPORTEDHISTORY,
+            'severity' => 'info',
+            'peersubmission' => null,
+            'detail' => json_encode(['gap' => 3 * DAYSECS]),
+            'timecreated' => time(),
+        ]);
+
+        $data = review_service::get_review_data($this->instance, $this->submission);
+        $context = (new review_page($data, (int) $this->cm->cmid))
+            ->export_for_template($PAGE->get_renderer('mod_codereview'));
+
+        $this->assertCount(1, $context['flags']);
+        $this->assertStringContainsString(format_time(3 * DAYSECS), $context['flags'][0]['description']);
+    }
+
+    /**
      * A failed AI review is not shown as a suggestion.
      *
      * @return void

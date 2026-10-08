@@ -225,7 +225,8 @@ class review_service {
             case integrity_checker::FLAG_DUPLICATEREPO:
                 return get_string('flagduplicaterepo', 'mod_codereview');
             case integrity_checker::FLAG_IMPORTEDHISTORY:
-                return get_string('flagimportedhistory', 'mod_codereview');
+                $gap = (int) ($detail['gap'] ?? 0);
+                return get_string('flagimportedhistory', 'mod_codereview', $gap > 0 ? format_time($gap) : '-');
             default:
                 return '';
         }
