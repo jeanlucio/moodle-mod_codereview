@@ -63,7 +63,7 @@ The API is read-only here, and a token is optional but strongly recommended:
 
 | Level | Where | Rate limit |
 |---|---|---|
-| Personal token of the activity owner | The teacher's own preferences page, encrypted | 5000/hour |
+| Personal token of the activity owner | Preferences > My GitHub token, encrypted | 5000/hour |
 | Site token | Site administration, set by the admin | 5000/hour, shared |
 | No token | — | 60/hour **per IP, shared by the whole site** |
 
@@ -73,6 +73,25 @@ hour for the entire site: it is a demonstration mode, not a production one.
 An activity stores only a **pointer** to whose personal token it uses, never the token itself, so
 no secret is ever reachable through a course-scoped form. Use a fine-grained personal access token
 with read-only access and no write scopes.
+
+### Setting up a personal token
+
+1. **Generate the token on GitHub.** Open *Settings > Developer settings > Personal access tokens >
+   Fine-grained tokens* and choose *Generate new token*. Under *Repository access* pick *Public
+   repositories (read-only)*, grant no extra permission and choose an expiry date. GitHub shows
+   the token only once.
+2. **Ask the administrator to enable it.** In the plugin settings, turn on *Allow personal GitHub
+   tokens*, and make sure your role has the capability *Use a personal GitHub token*
+   (`mod/codereview:usepersonaltoken`). Without this the link in the next step is not shown, which
+   looks like a defect but is not; in that case the activity form shows a notice telling the
+   teacher to ask the administrator.
+3. **Paste the token in Moodle.** Open *Preferences > My GitHub token*, paste it and save. It is
+   stored encrypted and never displayed again. Only the owner sees this page.
+4. **Use it in the activity.** In the activity settings tick *Use my personal token for this
+   activity*; the help icon next to it repeats these steps.
+
+If you would rather have a single token for everyone, the administrator can set the **site token**
+in the plugin settings instead; the personal token, when ticked, takes precedence over it.
 
 ## Licence
 
@@ -144,7 +163,7 @@ O acesso à API aqui é somente leitura, e o token é opcional, mas fortemente r
 
 | Nível | Onde | Limite de requisições |
 |---|---|---|
-| Token pessoal do dono da atividade | Página de preferências do próprio professor, cifrado | 5000/hora |
+| Token pessoal do dono da atividade | Preferências > Meu token do GitHub, cifrado | 5000/hora |
 | Token de site | Administração do site, definido pelo admin | 5000/hora, compartilhado |
 | Sem token | — | 60/hora **por IP, compartilhado por todo o site** |
 
@@ -154,6 +173,25 @@ hora no site inteiro: é modo de demonstração, não de produção.
 A atividade guarda apenas um **ponteiro** para de quem é o token pessoal usado, nunca o token em si,
 de modo que nenhum segredo fica alcançável por um formulário de curso. Use um token de acesso
 pessoal fine-grained, somente leitura, sem nenhum escopo de escrita.
+
+### Configurando um token pessoal
+
+1. **Gere o token no GitHub.** Abra *Settings > Developer settings > Personal access tokens >
+   Fine-grained tokens* e escolha *Generate new token*. Em *Repository access* selecione *Public
+   repositories (read-only)*, não conceda nenhuma permissão extra e escolha uma data de validade.
+   O GitHub mostra o token uma única vez.
+2. **Peça ao administrador que habilite.** Nas configurações do plugin, ligue *Permitir tokens
+   pessoais do GitHub* e confira se o seu papel tem a capacidade *Usar um token pessoal do GitHub*
+   (`mod/codereview:usepersonaltoken`). Sem isso o link do passo seguinte não aparece, o que parece
+   defeito, mas não é; nesse caso o formulário da atividade mostra um aviso pedindo ao professor
+   que procure o administrador.
+3. **Cole o token no Moodle.** Abra *Preferências > Meu token do GitHub*, cole e salve. Ele fica
+   cifrado e nunca é exibido de novo. Só o dono vê essa página.
+4. **Use na atividade.** Nas configurações da atividade marque *Usar meu token pessoal nesta
+   atividade*; o ícone de ajuda ao lado repete esses passos.
+
+Se preferir um token único para todos, o administrador pode definir o **token do site** nas
+configurações do plugin; o token pessoal, quando marcado, tem precedência sobre ele.
 
 ## Licença
 

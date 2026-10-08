@@ -149,7 +149,10 @@ class mod_codereview_mod_form extends moodleform_mod {
 
         $mform = $this->_form;
 
+        // Hiding the option without a word leaves the teacher hunting for a setting that is
+        // only missing because the administrator has not enabled it for them.
         if (!github_token::personal_tokens_allowed((int) $USER->id)) {
+            $mform->addElement('static', 'tokenunavailable', '', get_string('tokenunavailable', 'mod_codereview'));
             return;
         }
 
@@ -172,9 +175,14 @@ class mod_codereview_mod_form extends moodleform_mod {
 
         $mform->addElement('advcheckbox', 'tokenusemine', get_string('tokenusemine', 'mod_codereview'));
         $mform->setDefault('tokenusemine', $current === (int) $USER->id ? 1 : 0);
+        $mform->addHelpButton('tokenusemine', 'tokenusemine', 'mod_codereview');
 
         if (!github_token::has_personal_token((int) $USER->id)) {
-            $mform->addElement('static', 'tokenmissing', '', get_string('personaltokennotset', 'mod_codereview'));
+            $link = html_writer::link(
+                new moodle_url('/mod/codereview/mytoken.php'),
+                get_string('mytoken', 'mod_codereview')
+            );
+            $mform->addElement('static', 'tokenmissing', '', get_string('tokenmissing', 'mod_codereview', $link));
         }
     }
 
