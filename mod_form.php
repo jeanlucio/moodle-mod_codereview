@@ -151,7 +151,7 @@ class mod_codereview_mod_form extends moodleform_mod {
 
         // Hiding the option without a word leaves the teacher hunting for a setting that is
         // only missing because the administrator has not enabled it for them.
-        if (!github_token::personal_tokens_allowed((int) $USER->id)) {
+        if (!github_token::personal_tokens_allowed((int) $USER->id, context_course::instance($this->get_course()->id))) {
             $mform->addElement('static', 'tokenunavailable', '', get_string('tokenunavailable', 'mod_codereview'));
             return;
         }

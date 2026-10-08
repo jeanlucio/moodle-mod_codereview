@@ -81,8 +81,9 @@ with read-only access and no write scopes.
    repositories (read-only)*, grant no extra permission and choose an expiry date. GitHub shows
    the token only once.
 2. **Ask the administrator to enable it.** In the plugin settings, turn on *Allow personal GitHub
-   tokens*, and make sure your role has the capability *Use a personal GitHub token*
-   (`mod/codereview:usepersonaltoken`). Without this the link in the next step is not shown, which
+   tokens*. The capability *Use a personal GitHub token* (`mod/codereview:usepersonaltoken`) is
+   granted to teachers and managers by default, and it counts when held in any course, so no
+   site-level role is needed. Without the setting the link in the next step is not shown, which
    looks like a defect but is not; in that case the activity form shows a notice telling the
    teacher to ask the administrator.
 3. **Paste the token in Moodle.** Open *Preferences > My GitHub token*, paste it and save. It is
@@ -181,8 +182,10 @@ pessoal fine-grained, somente leitura, sem nenhum escopo de escrita.
    repositories (read-only)*, não conceda nenhuma permissão extra e escolha uma data de validade.
    O GitHub mostra o token uma única vez.
 2. **Peça ao administrador que habilite.** Nas configurações do plugin, ligue *Permitir tokens
-   pessoais do GitHub* e confira se o seu papel tem a capacidade *Usar um token pessoal do GitHub*
-   (`mod/codereview:usepersonaltoken`). Sem isso o link do passo seguinte não aparece, o que parece
+   pessoais do GitHub*. A capacidade *Usar um token pessoal do GitHub*
+   (`mod/codereview:usepersonaltoken`) já vem concedida a professores e gerentes e vale quando
+   mantida em qualquer curso, sem precisar de papel no nível do site. Sem a configuração o link do
+   passo seguinte não aparece, o que parece
    defeito, mas não é; nesse caso o formulário da atividade mostra um aviso pedindo ao professor
    que procure o administrador.
 3. **Cole o token no Moodle.** Abra *Preferências > Meu token do GitHub*, cole e salve. Ele fica

@@ -16,6 +16,8 @@
 
 namespace mod_codereview\local;
 
+use context;
+use context_course;
 use context_system;
 use core\encryption;
 use stdClass;
@@ -39,18 +41,33 @@ class github_token {
     /**
      * Returns true when personal tokens are available to the given user.
      *
+     * Teachers normally get their role from a course enrolment, whose capabilities never
+     * reach the system context, so checking there alone would hide the option from the very
+     * people it is meant for. The capability therefore counts when it is held at the system
+     * level, in the given context, or, when no context is known, in any course.
+     *
      * @param int|null $userid Defaults to the current user.
+     * @param context|null $context Where the token is going to be used, when that is known.
      * @return bool
      */
-    public static function personal_tokens_allowed(?int $userid = null): bool {
+    public static function personal_tokens_allowed(?int $userid = null, ?context $context = null): bool {
         global $USER;
 
         if (!get_config('mod_codereview', 'enablepersonaltokens')) {
             return false;
         }
         $userid = $userid ?? (int) $USER->id;
+        $capability = 'mod/codereview:usepersonaltoken';
 
-        return has_capability('mod/codereview:usepersonaltoken', context_system::instance(), $userid);
+        if (has_capability($capability, context_system::instance(), $userid)) {
+            return true;
+        }
+
+        if ($context !== null) {
+            return has_capability($capability, $context, $userid);
+        }
+
+        return !empty(get_user_capability_course($capability, $userid, false, '', '', 1));
     }
 
     /**
@@ -121,7 +138,10 @@ class github_token {
     public static function resolve(stdClass $instance): string {
         $ownerid = (int) ($instance->tokenuserid ?? 0);
 
-        if ($ownerid > 0 && self::personal_tokens_allowed($ownerid)) {
+        $course = (int) ($instance->course ?? 0);
+        $context = $course > 0 ? context_course::instance($course, IGNORE_MISSING) : false;
+
+        if ($ownerid > 0 && self::personal_tokens_allowed($ownerid, $context ?: null)) {
             $personal = self::get_personal_token($ownerid);
             if ($personal !== '') {
                 return $personal;
