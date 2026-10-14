@@ -47,6 +47,7 @@ class mod_codereview_submit_form extends moodleform {
         $mform->addElement('text', 'repourl', get_string('repourl', 'mod_codereview'), ['size' => 60]);
         $mform->setType('repourl', PARAM_RAW_TRIMMED);
         $mform->addRule('repourl', null, 'required', null, 'client');
+        $mform->addRule('repourl', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addHelpButton('repourl', 'repourl', 'mod_codereview');
 
         $mform->addElement('text', 'commitsha', get_string('commitsha', 'mod_codereview'), ['size' => 44]);

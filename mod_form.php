@@ -82,6 +82,7 @@ class mod_codereview_mod_form extends moodleform_mod {
             'size' => 60,
         ]);
         $mform->setType('templaterepourl', PARAM_URL);
+        $mform->addRule('templaterepourl', get_string('maximumchars', '', 255), 'maxlength', 255, 'client');
         $mform->addHelpButton('templaterepourl', 'templaterepourl', 'mod_codereview');
 
         $mform->addElement('advcheckbox', 'integritychecks', get_string('integritychecks', 'mod_codereview'));

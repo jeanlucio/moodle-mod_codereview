@@ -16,6 +16,7 @@
 
 namespace mod_codereview\local;
 
+use core_text;
 use mod_codereview\exception\github_exception;
 use stdClass;
 
@@ -195,7 +196,7 @@ class fingerprint_service {
             $records[] = (object) [
                 'codereview' => $instanceid,
                 'submission' => $submissionid,
-                'path' => (string) substr((string) ($entry['path'] ?? ''), 0, 255),
+                'path' => core_text::substr((string) ($entry['path'] ?? ''), 0, 255),
                 'blobsha' => (string) $entry['sha'],
                 'filesize' => (int) ($entry['size'] ?? 0),
                 'timecreated' => $now,
