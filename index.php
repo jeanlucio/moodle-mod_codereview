@@ -42,7 +42,10 @@ echo $OUTPUT->heading(get_string('modulenameplural', 'mod_codereview'));
 $instances = get_all_instances_in_course('codereview', $course);
 
 if (!$instances) {
-    echo $OUTPUT->notification(get_string('noinstances', 'moodle'), \core\output\notification::NOTIFY_INFO);
+    echo $OUTPUT->notification(
+        get_string('thereareno', 'moodle', get_string('modulenameplural', 'mod_codereview')),
+        \core\output\notification::NOTIFY_INFO
+    );
     echo $OUTPUT->footer();
     exit;
 }
