@@ -76,7 +76,7 @@ class ai_gateway {
             $hubmessage = (string) ($result['message'] ?? '');
         }
 
-        $result = $this->generate_with_core_ai($system, $user, $context);
+        $result = $this->generate_with_core_ai($system, $user, $context, $userid);
 
         // When neither layer answered, the hub's reason is the more specific of the
         // two and is what the teacher needs to read.
@@ -134,9 +134,10 @@ class ai_gateway {
      * @param string $system The system prompt.
      * @param string $user The user prompt.
      * @param context $context The course or activity context the request belongs to.
+     * @param int $userid The user the usage is recorded against, or 0 for whoever is logged in.
      * @return array{success: bool, text: string, provider: string, model: string, error: string}
      */
-    protected function generate_with_core_ai(string $system, string $user, context $context): array {
+    protected function generate_with_core_ai(string $system, string $user, context $context, int $userid = 0): array {
         $failure = ['success' => false, 'text' => '', 'provider' => '', 'model' => '', 'error' => 'noprovider'];
 
         if (!$this->core_ai_available($context)) {
@@ -145,11 +146,7 @@ class ai_gateway {
 
         try {
             $manager = \core\di::get(\core_ai\manager::class);
-            $action = new \core_ai\aiactions\generate_text(
-                contextid: $context->id,
-                userid: (int) $GLOBALS['USER']->id,
-                prompttext: $system . "\n\n" . $user,
-            );
+            $action = $this->build_core_ai_action($system . "\n\n" . $user, $context, $userid);
 
             $response = $manager->process_action($action);
             if (!$response->get_success()) {
@@ -171,11 +168,33 @@ class ai_gateway {
     }
 
     /**
+     * Builds the core_ai text generation action.
+     *
+     * Core records the action, and applies any per-user rate limit, against the user it
+     * carries. From cron that would be the cron user rather than the teacher whose
+     * activity asked for the review, so an explicit owner takes precedence.
+     *
+     * @param string $prompt The full prompt text.
+     * @param context $context The course or activity context the request belongs to.
+     * @param int $userid The user the usage is recorded against, or 0 for whoever is logged in.
+     * @return \core_ai\aiactions\generate_text
+     */
+    protected function build_core_ai_action(string $prompt, context $context, int $userid): \core_ai\aiactions\generate_text {
+        return new \core_ai\aiactions\generate_text(
+            contextid: $context->id,
+            userid: $userid > 0 ? $userid : (int) $GLOBALS['USER']->id,
+            prompttext: $prompt,
+        );
+    }
+
+    /**
      * Returns true when core_ai can run a text generation in this context.
      *
-     * Respects the per-course "Enable AI tools" override where core supports it. The
-     * check does not exist on Moodle 4.5, where its absence must read as "allowed"
-     * rather than blocking the feature outright.
+     * Requires an enabled and configured provider for the action first: the per-course
+     * switch below says nothing about that, and without this check a site with no
+     * provider would be reported as having AI. Then respects the per-course "Enable AI
+     * tools" override where core supports it. That check does not exist on Moodle 4.5,
+     * where its absence must read as "allowed" rather than blocking the feature outright.
      *
      * @param context $context The course or activity context the request belongs to.
      * @return bool
@@ -188,6 +207,11 @@ class ai_gateway {
         try {
             $manager = \core\di::get(\core_ai\manager::class);
         } catch (\Throwable $e) {
+            return false;
+        }
+
+        // Static on Moodle 4.5 and an instance method from 5.0; calling it on the instance works for both.
+        if (!$manager->is_action_available(\core_ai\aiactions\generate_text::class)) {
             return false;
         }
 

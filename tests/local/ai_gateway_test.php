@@ -94,4 +94,46 @@ final class ai_gateway_test extends advanced_testcase {
 
         $this->assertSame([['available', null], ['generate', null]], $gateway->asked);
     }
+
+    /**
+     * Without an enabled and configured provider core_ai is not reported as available, so
+     * the review is skipped instead of failing after the student's code was fetched.
+     *
+     * @return void
+     */
+    public function test_core_ai_is_unavailable_without_a_provider(): void {
+        $this->resetAfterTest();
+
+        $this->assertFalse((new ai_gateway())->is_available(context_system::instance()));
+    }
+
+    /**
+     * The usage is recorded against the owner when there is one, and against the
+     * logged-in user otherwise.
+     *
+     * @return void
+     */
+    public function test_core_ai_usage_is_attributed_to_the_owner(): void {
+        $this->resetAfterTest();
+        $teacher = $this->getDataGenerator()->create_user();
+        $other = $this->getDataGenerator()->create_user();
+        $this->setUser($other);
+        $context = context_system::instance();
+
+        $gateway = new class extends ai_gateway {
+            /**
+             * Exposes the protected builder.
+             *
+             * @param context_system $context The context.
+             * @param int $userid The owner.
+             * @return int The user the action carries.
+             */
+            public function action_userid(context_system $context, int $userid): int {
+                return $this->build_core_ai_action('prompt', $context, $userid)->get_configuration('userid');
+            }
+        };
+
+        $this->assertSame((int) $teacher->id, $gateway->action_userid($context, (int) $teacher->id));
+        $this->assertSame((int) $other->id, $gateway->action_userid($context, 0));
+    }
 }
