@@ -255,4 +255,41 @@ final class backup_restore_test extends advanced_testcase {
 
         return $id;
     }
+
+    /**
+     * The links inside the teacher's feedback survive a restore: the backup encodes every link in the text
+     * columns it writes, and only the activity's intro was decoded back.
+     */
+    public function test_backup_and_restore_decodes_links_in_the_feedback(): void {
+        global $CFG, $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $module = $this->getDataGenerator()->create_module('codereview', ['course' => $course->id]);
+        $instance = $DB->get_record('codereview', ['id' => $module->id], '*', MUST_EXIST);
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $teacher = $this->getDataGenerator()->create_and_enrol($course, 'editingteacher');
+        $submissionid = $this->make_submission($instance, $student, 'ana');
+        $link = $CFG->wwwroot . '/course/view.php?id=' . $course->id;
+        $DB->insert_record('codereview_grades', (object) [
+            'submission' => $submissionid,
+            'graderid' => $teacher->id,
+            'suggestedgrade' => 50,
+            'finalgrade' => 70,
+            'feedbackcomment' => 'Read ' . $link . ' again.',
+            'feedbackformat' => FORMAT_PLAIN,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+
+        $newcourseid = $this->duplicate_course((int) $course->id, (int) get_admin()->id);
+
+        $newinstance = $DB->get_record('codereview', ['course' => $newcourseid], '*', MUST_EXIST);
+        $newsubmission = $DB->get_record('codereview_submissions', ['codereview' => $newinstance->id], '*', MUST_EXIST);
+        $grade = $DB->get_record('codereview_grades', ['submission' => $newsubmission->id], '*', MUST_EXIST);
+        $this->assertStringContainsString($CFG->wwwroot . '/course/view.php?id=' . $newcourseid, $grade->feedbackcomment);
+        $this->assertStringNotContainsString('$@', $grade->feedbackcomment);
+    }
 }

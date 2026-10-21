@@ -179,10 +179,13 @@ class restore_codereview_activity_structure_step extends restore_activity_struct
         global $DB;
 
         $data = (object) $data;
+        $oldid = $data->id;
         $data->submission = $this->get_new_parentid('codereview_submission');
         $data->graderid = $this->get_mappingid('user', $data->graderid) ?: 0;
 
-        $DB->insert_record('codereview_grades', $data);
+        $newitemid = $DB->insert_record('codereview_grades', $data);
+        // Registered so the activity task can decode the links in the feedback.
+        $this->set_mapping('codereview_grade', $oldid, $newitemid);
     }
 
     /**

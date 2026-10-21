@@ -57,7 +57,10 @@ class restore_codereview_activity_task extends restore_activity_task {
      * @return array
      */
     public static function define_decode_contents(): array {
-        return [new restore_decode_content('codereview', ['intro'], 'codereview')];
+        return [
+            new restore_decode_content('codereview', ['intro'], 'codereview'),
+            new restore_decode_content('codereview_grades', ['feedbackcomment'], 'codereview_grade'),
+        ];
     }
 
     /**
