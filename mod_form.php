@@ -196,19 +196,24 @@ class mod_codereview_mod_form extends moodleform_mod {
     /**
      * Adds the activity's own completion rules.
      *
+     * The element name carries the form's suffix. The core shows this form on the "Default activity
+     * completion" page with the suffix "_codereview" and drops any custom rule whose name lacks it,
+     * which would also erase the rule from the defaults of every new activity.
+     *
      * @return string[] The element names the rules live under.
      */
     public function add_completion_rules(): array {
         $mform = $this->_form;
+        $name = 'completionsubmit' . $this->get_suffix();
 
         $mform->addElement(
             'advcheckbox',
-            'completionsubmit',
+            $name,
             '',
             get_string('completionsubmit', 'mod_codereview')
         );
 
-        return ['completionsubmit'];
+        return [$name];
     }
 
     /**
@@ -218,7 +223,7 @@ class mod_codereview_mod_form extends moodleform_mod {
      * @return bool
      */
     public function completion_rule_enabled($data): bool {
-        return !empty($data['completionsubmit']);
+        return !empty($data['completionsubmit' . $this->get_suffix()]);
     }
 
     /**
