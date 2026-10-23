@@ -36,4 +36,14 @@ class course_module_viewed extends base_course_module_viewed {
         $this->data['edulevel'] = self::LEVEL_PARTICIPATING;
         $this->data['objecttable'] = 'codereview';
     }
+
+    /**
+     * Maps the logged object id to the activity instance the restore creates.
+     *
+     * @return array
+     */
+    #[\Override]
+    public static function get_objectid_mapping(): array {
+        return ['db' => 'codereview', 'restore' => 'codereview'];
+    }
 }

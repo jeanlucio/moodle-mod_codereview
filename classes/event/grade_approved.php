@@ -82,4 +82,26 @@ class grade_approved extends base {
             "'{$this->relateduserid}' in the codereview activity with course module id " .
             "'{$this->contextinstanceid}'.";
     }
+
+    /**
+     * Maps the logged object id to the submission the restore creates.
+     *
+     * @return array
+     */
+    #[\Override]
+    public static function get_objectid_mapping(): array {
+        return ['db' => 'codereview_submissions', 'restore' => 'codereview_submission'];
+    }
+
+    /**
+     * Declares that nothing in the event's other data is an id to remap.
+     *
+     * The only value there is the final grade, which is not a database id.
+     *
+     * @return array
+     */
+    #[\Override]
+    public static function get_other_mapping(): array {
+        return [];
+    }
 }
