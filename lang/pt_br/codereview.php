@@ -23,7 +23,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-// phpcs:disable moodle.Files.LineLength
 
 $string['actions'] = 'Ações';
 $string['aicierror'] = 'A revisão por IA não foi iniciada porque as checagens automáticas não puderam ser lidas';

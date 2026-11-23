@@ -23,7 +23,6 @@
  */
 
 defined('MOODLE_INTERNAL') || die();
-// phpcs:disable moodle.Files.LineLength
 
 $string['actions'] = 'Actions';
 $string['aicierror'] = 'The AI review was not started because the automated checks could not be read';
